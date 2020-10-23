@@ -33,7 +33,7 @@ setup(name='nprintml',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
       url='https://github.com/nprint/nprintml',
-      # license='xxx',  # FIXME
+      license='Apache License 2.0', 
       python_requires='>=3.6,<4',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,

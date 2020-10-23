@@ -1,6 +1,6 @@
 # nprintML
 
-THIS IS WHAT NPRINTML IS!
+nprintML is built to bridge the gap from nPrint, which generates standard fingerprints for packets, and autoML, which allows for optimized model training and traffic analysis. nprintML enables users with traffic and labels to perform optimized packet-level traffic analysis **without writing any code**.
 
 
 ## Getting It

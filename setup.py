@@ -29,7 +29,7 @@ EXTRAS_REQUIRE = {
 
 setup(name='nprintml',
       version='0.0.0',
-      description='automated traffic analysis pipleine using nPrint',
+      description='fully automated traffic analysis with nPrint',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
       url='https://github.com/nprint/nprintml',

@@ -1,0 +1,10 @@
+__pycache__/
+*.egg-info/
+build/
+dist/
+
+.python-version
+
+.tox/
+
+*.vim

@@ -29,11 +29,11 @@ EXTRAS_REQUIRE = {
 
 setup(name='nprintml',
       version='0.0.0',
-      description='fully automated traffic analysis with nPrint',
+      description='Fully automated traffic analysis with nPrint',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
       url='https://github.com/nprint/nprintml',
-      license='Apache License 2.0', 
+      license='License :: OSI Approved :: Apache Software License',
       python_requires='>=3.6,<4',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,

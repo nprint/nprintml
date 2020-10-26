@@ -16,7 +16,3 @@ def execute(argv=None, **parser_kwargs):
     args = parser.parse_args(argv)
 
     raise NotImplementedError(args)
-
-
-if __name__ == '__main__':
-    execute()

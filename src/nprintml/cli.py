@@ -1,9 +1,11 @@
+"""nprintML command-line interface entry-point"""
 import argparse
 
 # import argparse_formatter  # FIXME
 
 
 def execute(argv=None, **parser_kwargs):
+    """Execute the nprintml CLI command."""
     parser = argparse.ArgumentParser(
         description='DESCRIPTION GOES HERE',
 

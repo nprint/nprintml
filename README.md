@@ -17,6 +17,8 @@ As needed, consult your package manager or [python.org](https://python.org/).
 
 Depending on your situation, consider [pyenv](https://github.com/pyenv/pyenv) for easy installation and management of arbitrary versions of Python.
 
+nprintML further requires nPrint (see below).
+
 ### Installation
 
 nprintML itself is available for download from the [Python Package Index (PyPI)](https://pypi.org/) and via `pip`:
@@ -27,7 +29,17 @@ This downloads, builds and installs the `nprintml` console command. If you're ha
 
 That said, installation of this command via a tool such as [pipx](https://pipxproject.github.io/pipx/) is strongly encouraged. pipx will ensure that nprintML is installed into its own virtual environment, such that its third-party libraries do not conflict with any others installed on your system.
 
-(Note that nprint and nprintML are unrelated to the PyPI distribution named "nprint.")
+(Note that nPrint and nprintML are unrelated to the PyPI distribution named "nprint.")
+
+### Post-installation
+
+nprintML depends on the nPrint command, which may be installed separately, (with reference to the [nPrint documentation](https://github.com/nprint/nprint/wiki/2.-Installation)).
+
+For quick-and-easy satisfaction of this requirement, nprintML supplies the bootstrapping command `nprint-install`, which is made available to your environment with nprintML installed. This command will inspect its execution environment and attempt to retrieve, compile and install nPrint with the most appropriate defaults:
+
+    nprint-install
+
+nPrint may thereby be installed system-globally, to the user environment, to the (virtual) environment to which nprintML was installed, or to a specified path prefix. Consult the command's `--help` for more information.
 
 
 ## Using It

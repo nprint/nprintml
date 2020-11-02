@@ -44,9 +44,13 @@ nPrint may thereby be installed system-globally, to the user environment, to the
 
 ## Using It
 
-nprintML supplies the top-level shell command `nprintml`:
+nprintML supplies the top-level shell command `nprintml` &ndash;
 
     nprintml ...
+
+&ndash; as well as its terse alias `nml` &ndash;
+
+    nml ...
 
 In case of command path ambiguity and in support of debugging, the `nprintml` command is identically available through its Python module (no different from `pip` above):
 

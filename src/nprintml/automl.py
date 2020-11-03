@@ -42,14 +42,12 @@ class AutoML:
 
     def train(self, train_data, eval_metric='accuracy', quality=0,
               time_limits=5*60, n_threads=1):
-        predictor = task.fit(train_data=train_data, label='label',
-                             eval_metric=eval_metric,
-                             output_directory=self.outpath.name,
-                             time_limits=time_limits,
-                             presets=self.qd[quality],
-                             nthreads_per_trial=n_threads)
-
-        return predictor
+        return task.fit(train_data=train_data, label='label',
+                        eval_metric=eval_metric,
+                        output_directory=self.outpath.name,
+                        time_limits=time_limits,
+                        presets=self.qd[quality],
+                        nthreads_per_trial=n_threads)
 
     def test(self, predictor, test_data):
         leaderboard = predictor.leaderboard(test_data, silent=True)

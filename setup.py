@@ -62,6 +62,7 @@ setup(name='nprintml',
       package_dir={'': 'src'},
       entry_points={
           'console_scripts': [
+              'nml=nprintml.cli:execute',
               'nprintml=nprintml.cli:execute',
               'nprint-install=nprintml.net.bootstrap:execute',
             ],

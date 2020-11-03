@@ -124,7 +124,6 @@ class AutoML:
     def _make_binary_roc(self, y_true, y_proba, cl=None):
         fpr, tpr, thresholds = roc_curve(y_true, y_proba)
         cl_auc = auc(fpr, tpr)
-        label = None
         if cl:
             label = '{0} - AUC: {1:.2f}'.format(cl, cl_auc)
         else:

@@ -41,6 +41,10 @@ For quick-and-easy satisfaction of this requirement, nprintML supplies the boots
 
 nPrint may thereby be installed system-globally, to the user environment, to the (virtual) environment to which nprintML was installed, or to a specified path prefix. Consult the command's `--help` for more information.
 
+`nprint-install` is identically available through its Python module (no different from `pip` above):
+
+    python -m nprintml.net.install
+
 
 ## Using It
 
@@ -52,7 +56,7 @@ nprintML supplies the top-level shell command `nprintml` &ndash;
 
     nml ...
 
-In case of command path ambiguity and in support of debugging, the `nprintml` command is identically available through its Python module (no different from `pip` above):
+In case of command path ambiguity and in support of debugging, the `nprintml` command is also available through its Python module:
 
     python -m nprintml ...
 

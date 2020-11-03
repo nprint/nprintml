@@ -264,3 +264,7 @@ def execute_bootstrap(commands):
                 print()
 
     print('✓ success')
+
+
+if __name__ == '__main__':
+    execute()

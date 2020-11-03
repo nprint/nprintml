@@ -129,9 +129,7 @@ class AutoML:
             label = '{0} - AUC: {1:.2f}'.format(cl, cl_auc)
         else:
             label = 'AUC: {0:.2f}'.format(cl_auc)
-        ax = sns.lineplot(x=fpr, y=tpr, label=label)
-
-        return ax
+        return sns.lineplot(x=fpr, y=tpr, label=label)
 
     def finalize_graph(self, ofn, x_lim=None, y_lim=None, legend_loc=None,
                        title=None, x_label=None, y_label=None):

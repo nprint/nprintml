@@ -64,7 +64,7 @@ setup(name='nprintml',
           'console_scripts': [
               'nml=nprintml.cli:execute',
               'nprintml=nprintml.cli:execute',
-              'nprint-install=nprintml.net.bootstrap:execute',
+              'nprint-install=nprintml.net.install:execute',
             ],
       },
 )

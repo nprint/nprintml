@@ -99,9 +99,7 @@ class AutoML:
             label = '{0} - AP: {1:.2f}'.format(cl, cl_ap)
         else:
             label = 'AP: {0:.2f}'.format(cl_ap)
-        ax = sns.lineplot(x=recall, y=precision, label=label)
-
-        return ax
+        return sns.lineplot(x=recall, y=precision, label=label)
 
     def make_roc(self, classes, y_true_bin, y_proba):
         # Binary case does not enumerate

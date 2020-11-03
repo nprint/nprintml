@@ -94,7 +94,6 @@ class AutoML:
     def _make_binary_pr(self, y_true, y_proba, cl=None):
         precision, recall, thresholds = precision_recall_curve(y_true, y_proba)
         cl_ap = average_precision_score(y_true, y_proba)
-        label = None
         if cl:
             label = '{0} - AP: {1:.2f}'.format(cl, cl_ap)
         else:

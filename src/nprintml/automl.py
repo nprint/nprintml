@@ -7,8 +7,14 @@ import autogluon as ag
 from autogluon import TabularPrediction as task
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, \
-        average_precision_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import (
+    roc_curve,
+    auc,
+    precision_recall_curve,
+    average_precision_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+)
 
 import seaborn as sns
 sns.set_style("ticks")

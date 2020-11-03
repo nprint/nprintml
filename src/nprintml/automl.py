@@ -112,9 +112,10 @@ class AutoML:
                 ax = self._make_binary_roc(y_true_bin[:, i], y_proba[:, i], cl=cl)
 
         # Split up the line styles to make them unique
-        linestyles = ['-', '--', '-.', ':']
-        for i, line in enumerate(ax.lines):
-            line.set_linestyle(linestyles[i % len(linestyles)])
+        linestyles = ('-', '--', '-.', ':')
+        for (linestyle, line) in zip(itertools.cycle(linestyles),
+                                     ax.lines):
+            line.set_linestyle(linestyle)
 
         self.finalize_graph(self.outpath / 'roc.pdf', x_lim=[0.0, 1.0],
                             y_lim=[0.0, 1.05], x_label='False Positive Rate',

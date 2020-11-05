@@ -179,7 +179,7 @@ class PcapLabelAggregator(LabelAggregator):
         print('Loading all {0} nPrints'.format(len(files)))
         npt_tups = []
         largest = None
-        for npt_f in files[:100]:
+        for npt_f in files:
             npt = self.load_npt(npt_f)
             if largest is None or npt.shape[0] > largest.shape[0]:
                 largest = npt

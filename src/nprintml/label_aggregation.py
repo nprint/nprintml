@@ -42,13 +42,11 @@ class LabelAggregator(ABC):
         aggregation method.
         '''
 
-    def load_npt(self, npt):
+    def load_npt(self, npt_csv):
         '''
         Load an nPrint, where the index column is *always* the 0th column.
         '''
-        npt_df = pd.read_csv(npt, index_col=0)
-
-        return npt_df
+        return pd.read_csv(npt_csv, index_col=0)
 
     def load_labels(self, labels):
         '''

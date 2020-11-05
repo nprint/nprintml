@@ -148,7 +148,7 @@ class IndexLabelAggregator(LabelAggregator):
         for lid, group in groups:
             # Pad rows to get an even division for sample size
             pad_rows = sample_size - group.shape[0] % sample_size
-            fill_row = [-1 for i in range(group.shape[1])]
+            fill_row = [-1] * group.shape[1]
             for i in range(group.shape[0], group.shape[0] + pad_rows):
                 group.loc[i] = fill_row
 

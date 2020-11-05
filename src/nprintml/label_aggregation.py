@@ -159,9 +159,7 @@ class IndexLabelAggregator(LabelAggregator):
                 new_data.append(flattened_sample)
                 indexes.append(lid)
 
-        new_df = pd.DataFrame(new_data, index=indexes, columns=new_columns)
-
-        return new_df
+        return pd.DataFrame(new_data, index=indexes, columns=new_columns)
 
 
 class PcapLabelAggregator(LabelAggregator):

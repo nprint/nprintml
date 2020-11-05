@@ -212,7 +212,8 @@ class PcapLabelAggregator(LabelAggregator):
         new_npts = []
         new_indexes = []
         new_columns = self.get_flattened_columns(largest, largest.shape[0])
-        fill_row = [-1 for i in range(npt_tups[0][0].shape[1])]
+        row_len = npt_tups[0][0].shape[1]
+        fill_row = [-1] * row_len
 
         for (npt, index) in npt_tups:
             if npt.shape[0] < largest.shape[0]:

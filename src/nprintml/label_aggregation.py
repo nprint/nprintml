@@ -63,9 +63,7 @@ class LabelAggregator(ABC):
         '''
         nunique = npt.apply(pd.Series.nunique)
         cols_to_drop = nunique[nunique == 1].index
-        npt = npt.drop(cols_to_drop, axis=1)
-
-        return npt
+        return npt.drop(cols_to_drop, axis=1)
 
     def attach_labels(self, npt_df, labels):
         '''

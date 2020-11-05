@@ -48,14 +48,12 @@ class LabelAggregator(ABC):
         '''
         return pd.read_csv(npt_csv, index_col=0)
 
-    def load_labels(self, labels):
+    def load_labels(self, labels_csv):
         '''
         Load labels, which are expected to be in item,label column format where
         item is the index.
         '''
-        labels = pd.read_csv(labels, index_col=0)
-
-        return labels
+        return pd.read_csv(labels_csv, index_col=0)
 
     def compress_npt(self, npt):
         '''

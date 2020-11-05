@@ -222,6 +222,4 @@ class PcapLabelAggregator(LabelAggregator):
             new_npts.append(flattened_npt)
             new_indexes.append(index)
 
-        new_npts = pd.DataFrame(new_npts, index=new_indexes, columns=new_columns)
-
-        return new_npts
+        return pd.DataFrame(new_npts, index=new_indexes, columns=new_columns)

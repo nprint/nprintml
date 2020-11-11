@@ -3,10 +3,6 @@ import shutil
 import subprocess
 
 
-class NoCommand(Exception):
-    pass
-
-
 def nprint(*args, stdin=None, stdout=None, stderr=None, check=True):
     """Execute the `nprint` command via `subprocess`.
 
@@ -18,9 +14,12 @@ def nprint(*args, stdin=None, stdout=None, stderr=None, check=True):
 
     If the `nprint` command cannot be found on the PATH, then
     `NoCommand` is raised. This exception is also made available on the
-    callable object:
+    callable object --
 
         nprint.NoCommand
+
+    -- as is `CommandError`, raised from the `subprocess` package's
+    `CalledProcessError`.
 
     Returns the resulting `subprocess.CompletedProcess`.
 
@@ -31,14 +30,30 @@ def nprint(*args, stdin=None, stdout=None, stderr=None, check=True):
     if cmd is None:
         raise NoCommand
 
-    return subprocess.run(
-        (cmd,) + args,
-        stdin=stdin,
-        stdout=stdout,
-        stderr=stderr,
-        check=check,
-    )
+    try:
+        return subprocess.run(
+            (cmd,) + args,
+            stdin=stdin,
+            stdout=stdout,
+            stderr=stderr,
+            check=check,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise CommandError from exc
 
 
+class nPrintError(Exception):
+    pass
+
+
+class CommandError(nPrintError):
+    pass
+
+
+class NoCommand(nPrintError):
+    pass
+
+
+nprint.CommandError = CommandError
 nprint.NoCommand = NoCommand
 nprint.PIPE = subprocess.PIPE

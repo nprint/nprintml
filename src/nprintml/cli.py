@@ -22,18 +22,27 @@ ANIMALS = ('aardvark', 'bison', 'canary', 'dalmation', 'emu', 'falcon', 'gnu',
 
 def execute(argv=None, **parser_kwargs):
     """Execute the nprintml CLI command."""
-    parser = build_parser(**parser_kwargs)
+    try:
+        parser = build_parser(**parser_kwargs)
 
-    pipeline = Pipeline(parser)
+        pipeline = Pipeline(parser)
 
-    args = parser.parse_args(argv)
+        args = parser.parse_args(argv)
 
-    check_output_directory(args)
+        check_output_directory(args)
 
-    for (step, results) in pipeline(args):
-        print(step, results, sep=' → ')
+        for (step, results) in pipeline(args):
+            print(step, results, sep=' → ')
 
-    print('done →', pipeline.results)
+        print('done →', pipeline.results)
+    except KeyboardInterrupt:
+        print('interrupted ✕')
+    except Exception as exc:
+        if args.traceback:
+            raise
+
+        print(f'error:{exc.__class__.__module__}.{exc.__class__.__name__} ✕')
+        sys.exit(1)
 
 
 def build_parser(**parser_kwargs):
@@ -65,6 +74,13 @@ def build_parser(**parser_kwargs):
         '-V', '--verbose',
         action='store_true',
         help="print human readable packets with nPrints",
+    )
+
+    parser.add_argument(
+        '--tb', '--traceback',
+        action='store_true',
+        dest='traceback',
+        help="print exception tracebacks",
     )
 
     output_default = get_default_directory()

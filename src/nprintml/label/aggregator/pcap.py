@@ -11,58 +11,72 @@ class PcapLabelAggregator(LabelAggregator):
     size, to run autoML on the generated samples.
 
     """
-    def generate_features(self, compress=False, sample_size=1):
-        """Enumerates the directory of nPrints given, loading them,
-        padding to their maximum size, and attaching labels.
+    def __call__(self, compress=False, sample_size=1):
+        """Enumerate given directory of nPrint data, load, pad to their
+        maximum size, and attach labels.
 
         """
-        npt_dir = pathlib.Path(self.npts)
-        files = [npt_f for npt_f in npt_dir.glob('**/*') if npt_f.is_file()]
+        npts = self.merge_npt()
 
-        print('Loading all {0} nPrints'.format(len(files)))
-        npt_tups = []
-        largest = None
-        for npt_f in files:
-            npt = self.load_npt(npt_f)
-            if largest is None or npt.shape[0] > largest.shape[0]:
-                largest = npt
-            npt_tups.append((npt, str(npt_f)))
-
-        print('Padding nPrints to maximum size: {0}'.format(largest.shape[0]))
-        npts = self.pad_and_flatten_npts(npt_tups, largest)
-        print('nPrint shape: {0}'.format(npts.shape))
         if compress:
             print('Compressing nPrint')
             npts = self.compress_npt(npts)
-            print('  compressed nPrint shape: {0}'.format(npts.shape))
-            npts = self.compress_npt(npts)
-        labels = self.load_labels(self.label_file)
+            print('  compressed nPrint shape:', npts.shape)
 
         print('Attaching labels to nPrints')
-        npt_df, missing_labels, ogns, nns = self.attach_labels(npts, labels)
-        print('  labels attached: missing labels for: {0}'.format(missing_labels))
-        print('    missing labels caused {0} samples to be dropped'.format(ogns - nns))
+
+        labels = self.load_label(self.label_csv)
+        (npt_df, missing_labels, ogns, nns) = self.attach_label(npts, labels)
+
+        print('  labels attached: missing labels for:', missing_labels)
+        print('    missing labels caused samples to be dropped:', (ogns - nns))
 
         return npt_df
 
-    def pad_and_flatten_npts(self, npt_tups, largest):
-        """We need every sample size to be the same, so we find the
-        largest nPrint in all of the files and pad each sample with
-        empty nPrints.
+    def merge_npt(self):
+        """Merge nPrint data from multiple output files."""
+        # Load nPrint data sets and determine largest set
+        print('Loading nprints')
 
-        """
-        new_npts = []
-        new_indexes = []
-        new_columns = self.get_flattened_columns(largest, largest.shape[0])
-        row_len = npt_tups[0][0].shape[1]
+        npt_dir = pathlib.Path(self.npt_csv)
+        npt_files = (npt_file for npt_file in npt_dir.iterdir() if npt_file.is_file())
+
+        npts0 = []
+        npt_paths = []
+        largest_npt = None
+        file_count = 0
+
+        for (file_count, npt_file) in enumerate(npt_files, 1):
+            npt = self.load_npt(npt_file)
+
+            if largest_npt is None or npt.shape[0] > largest_npt.shape[0]:
+                largest_npt = npt
+
+            npts0.append(npt)
+            npt_paths.append(str(npt_file))
+
+        print('Loaded', file_count, 'nprints')
+
+        # We need every sample size to be the same, so we find the
+        # largest nPrint in all of the files and pad each sample with
+        # empty nPrints.
+
+        row_len = npts0[0].shape[1]
         fill_row = [-1] * row_len
 
-        for (npt, index) in npt_tups:
-            if npt.shape[0] < largest.shape[0]:
-                for i in range(npt.shape[0], largest.shape[0]):
-                    npt.loc[i] = fill_row
-            flattened_npt = npt.to_numpy().flatten()
-            new_npts.append(flattened_npt)
-            new_indexes.append(index)
+        npts1 = []
 
-        return pd.DataFrame(new_npts, index=new_indexes, columns=new_columns)
+        for npt in npts0:
+            for index in range(npt.shape[0], largest_npt.shape[0]):
+                npt.loc[index] = fill_row
+            npt_flat = npt.to_numpy().flatten()
+            npts1.append(npt_flat)
+
+        cols_flat = self.flatten_columns(largest_npt.columns, largest_npt.shape[0])
+
+        npts = pd.DataFrame(npts1, index=npt_paths, columns=cols_flat)
+
+        print('nPrints padded to maximum size:', largest_npt.shape[0])
+        print('nPrint shape:', npts.shape)
+
+        return npts

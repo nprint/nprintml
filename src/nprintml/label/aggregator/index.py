@@ -1,3 +1,5 @@
+import pathlib
+
 import numpy as np
 import pandas as pd
 
@@ -12,12 +14,27 @@ class IndexLabelAggregator(LabelAggregator):
     label.
 
     """
+    def __init__(self, npt_csv, label_csv):
+        if isinstance(npt_csv, str):
+            npt_csv = pathlib.Path(npt_csv)
+
+        if isinstance(npt_csv, pathlib.Path) and npt_csv.is_dir():
+            try:
+                (npt_csv,) = npt_csv.iterdir()
+            except ValueError:
+                raise OSError(
+                    f"{self.__class__.__name__} expects exactly one nPrint data file "
+                    f"but specified directory contains none or more than one: '{npt_csv}'"
+                )
+
+        super().__init__(npt_csv, label_csv)
+
     def __call__(self, compress=False, sample_size=1):
         """Generates index driven features by loading nPrints and
         attaching labels, grouping by a given sample size if desired.
 
         """
-        print('Loading nprint')
+        print('Loading nPrint:', self.filerepr(self.npt_csv))
         npt = self.load_npt(self.npt_csv)
 
         print('Loaded 1 nprint')
@@ -28,7 +45,7 @@ class IndexLabelAggregator(LabelAggregator):
             npt = self.compress_npt(npt)
             print('  compressed nPrint shape:', npt.shape)
 
-        print('Loading labels')
+        print('Loading labels:', self.filerepr(self.label_csv))
         labels = self.load_label(self.label_csv)
         print('  number of labels:', labels.shape[0])
 

@@ -11,6 +11,24 @@ class PcapLabelAggregator(LabelAggregator):
     size, to run autoML on the generated samples.
 
     """
+    def __init__(self, npt_csv, label_csv):
+        if isinstance(npt_csv, str):
+            npt_csv = pathlib.Path(npt_csv)
+
+        if not isinstance(npt_csv, pathlib.Path):
+            raise TypeError(
+                f"{self.__class__.__name__} expects a path to a directory of nPrint "
+                f"data file(s) not {npt_csv.__class__.__name__}: '{npt_csv}'"
+            )
+
+        if not any(npt_csv.iterdir()):
+            raise FileNotFoundError(
+                f"{self.__class__.__name__} requires at least one nPrint "
+                f"data file but directory is empty: '{npt_csv}'"
+            )
+
+        super().__init__(npt_csv, label_csv)
+
     def __call__(self, compress=False, sample_size=1):
         """Enumerate given directory of nPrint data, load, pad to their
         maximum size, and attach labels.
@@ -38,13 +56,11 @@ class PcapLabelAggregator(LabelAggregator):
         # Load nPrint data sets and determine largest set
         print('Loading nprints')
 
-        npt_dir = pathlib.Path(self.npt_csv)
-        npt_files = (npt_file for npt_file in npt_dir.iterdir() if npt_file.is_file())
-
         npts0 = []
         npt_paths = []
         largest_npt = None
         file_count = 0
+        npt_files = (npt_file for npt_file in self.npt_csv.iterdir() if npt_file.is_file())
 
         for (file_count, npt_file) in enumerate(npt_files, 1):
             npt = self.load_npt(npt_file)

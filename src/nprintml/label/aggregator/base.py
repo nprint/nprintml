@@ -1,4 +1,8 @@
 import abc
+import collections.abc
+import importlib
+import io
+import pkgutil
 
 import pandas as pd
 
@@ -58,7 +62,12 @@ class LabelAggregator(abc.ABC):
         """
         missing_labels = set(npt.index) - set(label.index)
         og_num_samples = npt.shape[0]
-        npt = npt.join(label).dropna(subset=['label'])
+
+        try:
+            npt = npt.join(label).dropna(subset=['label'])
+        except KeyError as exc:
+            raise LabelError("label input is malformed") from exc
+
         new_num_samples = npt.shape[0]
 
         return (npt, missing_labels, og_num_samples, new_num_samples)
@@ -74,3 +83,100 @@ class LabelAggregator(abc.ABC):
             for index in range(sample_size)
             for column in columns
         ]
+
+    @staticmethod
+    def filerepr(fd):
+        return fd.name if isinstance(fd, io.TextIOWrapper) else str(fd)
+
+
+class LabelError(Exception):
+    pass
+
+
+class PluginRegistry(collections.abc.Mapping):
+    """Lazy class registry.
+
+    The specified `package` is crawled -- lazily -- for well-named
+    modules containing class-based plugins; and, as needed, subclasses
+    of the specified `class_or_tuple` base (as with `issubclass()`)
+    are imported and registered for retrieval.
+
+    The registry operates as an immutable mapping.
+
+    Values are imported plugin classes, stored under the names of the
+    modules in which they are found.
+
+    Plugin module discovery may be customized by overriding
+    `__generate_names__`. Recognition and retrieval of plugin classes
+    may be customized by overriding `__retrieve_member__`.
+
+    """
+    def __init__(self, class_or_tuple, package, ignore=()):
+        # issubclass supports a class or a tuple of base classes, and so we do as well;
+        # however, we also need to check for identity, and so we'll enforce type here:
+        self.base = class_or_tuple if isinstance(class_or_tuple, tuple) else (class_or_tuple,)
+
+        # at least ensure we have access to the base package
+        self.package = importlib.import_module(package) if isinstance(package, str) else package
+
+        self.ignore = ignore if isinstance(ignore, frozenset) else frozenset(ignore)
+
+        self.__cache__ = None
+
+    def __generate_names__(self):
+        """Discover the plugin package's modules.
+
+        Sub-packages and modules whose names are contained with `ignore`
+        are ignored.
+
+        This method should only be called internally and only *once*.
+        It is factored out so as to be available for customization.
+
+        """
+        for module in pkgutil.iter_modules(self.package.__path__):
+            if not module.ispkg and module.name not in self.ignore:
+                yield module.name
+
+    def __retrieve_member__(self, name):
+        """Import the named module and return its contained plugin
+        class.
+
+        It is assumed that the module contains exactly one subclass of
+        the `class_or_tuple` base.
+
+        This method should only be called internally and only *once*.
+        It is factored out so as to be available for customization.
+
+        """
+        module = importlib.import_module(f'{self.package.__name__}.{name}')
+        (value,) = (member for member in vars(module).values()
+                    if isinstance(member, type) and
+                       issubclass(member, self.base) and  # noqa: E127
+                       member not in self.base)           # noqa: E127
+        return value
+
+    def __populate_names__(self):
+        """Construct and populate the keys of the registry cache if the
+        cache does not exist.
+
+        """
+        if self.__cache__ is None:
+            self.__cache__ = dict.fromkeys(self.__generate_names__())
+
+    def __iter__(self):
+        self.__populate_names__()
+        yield from self.__cache__
+
+    def __len__(self):
+        self.__populate_names__()
+        return len(self.__cache__)
+
+    def __getitem__(self, name):
+        self.__populate_names__()
+
+        value = self.__cache__[name]
+
+        if value is None:
+            value = self.__cache__[name] = self.__retrieve_member__(name)
+
+        return value

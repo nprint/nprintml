@@ -8,5 +8,16 @@ long as it receives a dataframe where each row of the dataframe contains
 a single sample and the labels for the samples are contained in a
 `label` column in the dataframe.
 
+Subclasses are organized into submodules, such as
+`aggregator.index.IndexLabelAggregator`.
+
+A lazy-loading `registry` of these classes is provided for their dynamic
+inspection and retrieval.
+
 """
-from .base import LabelAggregator  # noqa
+from .base import LabelAggregator, LabelError, PluginRegistry  # noqa: F401
+
+
+registry = PluginRegistry(LabelAggregator,
+                          __name__,
+                          ignore=['base'])

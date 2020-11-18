@@ -14,6 +14,7 @@ from nprintml.pipeline import Pipeline
 
 # ensure default steps of pipeline auto-load
 import nprintml.net.step
+import nprintml.label.step
 
 
 ANIMALS = ('aardvark', 'bison', 'canary', 'dalmation', 'emu', 'falcon', 'gnu',

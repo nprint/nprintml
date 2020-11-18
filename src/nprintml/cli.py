@@ -44,11 +44,7 @@ def execute(argv=None, **parser_kwargs):
         if args.traceback:
             raise
 
-        exc_repr = f'error:{exc.__class__.__module__}.{exc.__class__.__name__}'
-        if exc.args:
-            exc_repr += ': ' + ', '.join(map(str, exc.args))
-
-        print(f'{exc_repr} ✕')
+        print(f'error:{exc_repr(exc)} ✕')
         sys.exit(1)
 
 
@@ -107,6 +103,24 @@ def build_parser(**parser_kwargs):
     )
 
     return parser
+
+
+def exc_repr(exc):
+    """Construct representation of given exception appropriate for
+    printed output.
+
+    """
+    exc_repr = ''
+
+    if exc.__class__.__module__ != 'builtins':
+        exc_repr += f'{exc.__class__.__module__}.'
+
+    exc_repr += exc.__class__.__name__
+
+    if exc.args:
+        exc_repr += ': ' + ', '.join(map(str, exc.args))
+
+    return exc_repr
 
 
 def pairwise(iterable):

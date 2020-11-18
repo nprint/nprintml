@@ -178,7 +178,7 @@ class Step(metaclass=StepMeta):
     __requires__ = ()
 
     @classmethod
-    def __init_subclass__(cls, /, registry=None, **kwargs):
+    def __init_subclass__(cls, *, registry=None, **kwargs):
         """Register concrete Step upon declaration."""
         super().__init_subclass__(**kwargs)
 

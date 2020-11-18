@@ -7,7 +7,10 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
-    'argparse-formatter==1.2',
+    'argparse-formatter == 1.2',
+
+    'numpy ~= 1.19.4',
+    'pandas ~= 1.1.4',
 ]
 
 _DEV_REQUIRES = [

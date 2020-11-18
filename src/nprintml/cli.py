@@ -43,7 +43,11 @@ def execute(argv=None, **parser_kwargs):
         if args.traceback:
             raise
 
-        print(f'error:{exc.__class__.__module__}.{exc.__class__.__name__} ✕')
+        exc_repr = f'error:{exc.__class__.__module__}.{exc.__class__.__name__}'
+        if exc.args:
+            exc_repr += ': ' + ', '.join(map(str, exc.args))
+
+        print(f'{exc_repr} ✕')
         sys.exit(1)
 
 

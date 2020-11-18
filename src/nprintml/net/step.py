@@ -5,6 +5,7 @@ import os
 import pathlib
 import re
 import sys
+import textwrap
 import typing
 
 import nprintml
@@ -41,6 +42,11 @@ class Net(pipeline.Step):
             '-6', '--ipv6',
             action='store_true',
             help="include ipv6 headers",
+        )
+        self.group_parser.add_argument(
+            '-A', '--absolute-timestamps', '--absolute_timestamps',
+            action='store_true',
+            help="include absolute timestamp field",
         )
         self.group_parser.add_argument(
             '-c', '--count',
@@ -84,6 +90,24 @@ class Net(pipeline.Step):
             metavar='FILE',
             type=FileAccessType(os.R_OK),
             help="nPrint infile",
+        )
+        self.group_parser.add_argument(
+            '-O', '--write-index', '--write_index',
+            choices=range(5),
+            metavar='INTEGER',
+            type=int,
+            help=textwrap.dedent("""\
+                Output file Index (first column) Options:
+
+                0: source IP (default)
+
+                1: destination IP
+
+                2: source port
+
+                3: destination port
+
+                4: flow (5-tuple)"""),
         )
         self.group_parser.add_argument(
             '-p', '--payload',
@@ -155,7 +179,7 @@ class Net(pipeline.Step):
                 yield key
 
                 if not isinstance(value, bool):
-                    yield value
+                    yield str(value)
 
         # add output path
         outdir = self.get_output_directory(args)

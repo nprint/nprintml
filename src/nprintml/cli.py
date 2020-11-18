@@ -7,6 +7,8 @@ import re
 import sys
 import time
 
+import argparse_formatter
+
 import nprintml
 from nprintml.pipeline import Pipeline
 
@@ -54,6 +56,7 @@ def build_parser(**parser_kwargs):
     """
     parser = argparse.ArgumentParser(
         description='train models for network traffic analysis',
+        formatter_class=argparse_formatter.ParagraphFormatter,
         **parser_kwargs,
     )
 

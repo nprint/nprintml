@@ -11,6 +11,15 @@ INSTALL_REQUIRES = [
 
     'numpy ~= 1.19.4',
     'pandas ~= 1.1.4',
+
+    # for cuda, e.g.: mxnet_cu101 < 2.0.0
+    'mxnet < 2.0.0',
+
+    'autogluon ~= 0.0.14',
+    'scikit-learn ~= 0.23.2',
+
+    'matplotlib ~= 3.3.3',
+    'seaborn ~= 0.11.0',
 ]
 
 _DEV_REQUIRES = [
@@ -69,5 +78,4 @@ setup(name='nprintml',
               'nprintml=nprintml.cli:execute',
               'nprint-install=nprintml.net.install:execute',
             ],
-      },
-)
+      })

@@ -97,17 +97,13 @@ class Net(pipeline.Step):
             metavar='INTEGER',
             type=int,
             help=textwrap.dedent("""\
-                Output file Index (first column) Options:
-
-                0: source IP (default)
-
-                1: destination IP
-
-                2: source port
-
-                3: destination port
-
-                4: flow (5-tuple)"""),
+                output file index (first column)
+                select from:
+                    0: source IP (default)
+                    1: destination IP
+                    2: source port
+                    3: destination port
+                    4: flow (5-tuple)"""),
         )
         self.group_parser.add_argument(
             '-p', '--payload',

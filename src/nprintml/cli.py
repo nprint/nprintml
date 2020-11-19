@@ -15,6 +15,7 @@ from nprintml.pipeline import Pipeline
 # ensure default steps of pipeline auto-load
 import nprintml.net.step
 import nprintml.label.step
+import nprintml.learn.step
 
 
 ANIMALS = ('aardvark', 'bison', 'canary', 'dalmation', 'emu', 'falcon', 'gnu',
@@ -57,7 +58,7 @@ def build_parser(**parser_kwargs):
     """
     parser = argparse.ArgumentParser(
         description='train models for network traffic analysis',
-        formatter_class=argparse_formatter.ParagraphFormatter,
+        formatter_class=argparse_formatter.FlexiFormatter,
         **parser_kwargs,
     )
 

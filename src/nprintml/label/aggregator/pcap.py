@@ -44,17 +44,28 @@ class PcapLabelAggregator(LabelAggregator):
         print('Attaching labels to nPrints')
 
         labels = self.load_label(self.label_csv)
+        labels = self.rewrite_labels(labels, npts)
+
         (npt_df, missing_labels, ogns, nns) = self.attach_label(npts, labels)
 
         print('  labels attached: missing labels for:', missing_labels)
         print('    missing labels caused samples to be dropped:', (ogns - nns))
 
         return npt_df
+    
+    def rewrite_labels(self, labels, npts):
+        new_labels = []
+        stems = {}
+        # Get stems for orignal files
+        for row in labels.itertuples():
+            stems[pathlib.PurePath(row.Index).stem] = row.Label
 
-    def merge_npt(self):
-        """Merge nPrint data from multiple output files."""
-        # Load nPrint data sets and determine largest set
-        print('Loading nprints')
+        for row in npts.itertuples():
+            stem = pathlib.PurePath(row.Index).stem
+            if stem in stems:
+                new_labels.append((row.Index, stems[stem]))
+
+        return pd.DataFrame(new_labels, columns=['item', 'label']).set_index('item')
 
         npts0 = []
         npt_paths = []

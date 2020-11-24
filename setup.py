@@ -15,7 +15,31 @@ INSTALL_REQUIRES = [
     # for cuda, e.g.: mxnet_cu101 < 2.0.0
     'mxnet < 2.0.0',
 
-    'autogluon ~= 0.0.14',
+    # The latest autogluon release (0.0.14) is not directly installable -- nor installable as a
+    # requirement here -- due to mispackaging in its own dependency, ConfigSpace.
+    #
+    # (autogluon is installable according to its own documentation only because mxnet is then
+    # explicitly installed first, which implicitly resolves ConfigSpace's misconfiguration.)
+    #
+    # ConfigSpace was fixed in its 0.4.15, and autogluon has upgraded its requirement; but, it has
+    # not yet been released with this upgrade.
+    #
+    # As such a source revision of autogluon is here required and must be built; this further
+    # requires wheel.
+    #
+    # As soon as autogluon resolves this in a release, this requirement should be ugraded to that
+    # release; (and, wheel should then be removed from this listing).
+    #
+    # The old autogluon requirement:
+    #
+    # 'autogluon ~= 0.0.14',
+    #
+    # The revision with the fix: fa349db5e75a18cd3af7d9d3f1064eb34e92aca1:
+    'autogluon @ https://github.com/awslabs/autogluon/archive/fa349db.zip#subdirectory=autogluon',
+    #
+    # wheel (only required for above):
+    'wheel==0.35.1',
+
     'scikit-learn ~= 0.23.2',
 
     'matplotlib ~= 3.3.3',

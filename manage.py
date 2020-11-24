@@ -3,6 +3,9 @@
 This module populates ``manage`` sub-commands.
 
 """
+import copy
+import re
+
 from argparse import REMAINDER
 
 import argparse_formatter
@@ -130,8 +133,8 @@ class Release(Local):
         )
 
     def prepare(self, args):
-        if args.versions:
-            target = [f'dist/{self.distribution_name}-{version}*' for version in args.versions]
+        if args.version:
+            target = [f'dist/{self.distribution_name}-{version}*' for version in args.version]
         else:
             target = [f'dist/{self.distribution_name}-*']
 

@@ -54,12 +54,17 @@ class PcapLabelAggregator(LabelAggregator):
         return npt_df
     
     def rewrite_labels(self, labels, npts):
+        """Transfer original PCAP labels to new nPrint files so that labels
+        can be correctly aggregated
+
+        """
         new_labels = []
         stems = {}
         # Get stems for orignal files
         for row in labels.itertuples():
             stems[pathlib.PurePath(row.Index).stem] = row.Label
-
+    
+        # Associate old labels with new nPrint files
         for row in npts.itertuples():
             stem = pathlib.PurePath(row.Index).stem
             if stem in stems:
@@ -67,12 +72,16 @@ class PcapLabelAggregator(LabelAggregator):
 
         return pd.DataFrame(new_labels, columns=['item', 'label']).set_index('item')
 
+    def merge_npt(self):
+        """Merge nPrint data from multiple output files."""
+        print('Loading nPrints')
+
         npts0 = []
         npt_paths = []
         largest_npt = None
         file_count = 0
         npt_files = (npt_file for npt_file in self.npt_csv.iterdir() if npt_file.is_file())
-
+        
         for (file_count, npt_file) in enumerate(npt_files, 1):
             npt = self.load_npt(npt_file)
 

@@ -15,6 +15,21 @@ INSTALL_REQUIRES = [
     # for cuda, e.g.: mxnet_cu101 < 2.0.0
     'mxnet < 2.0.0',
 
+    # FIXME: Numpy pre-required in build environment to build Autogluon under py36-7 due to
+    # mispackaging in its own dependency, ConfigSpace.
+    #
+    # Autogluon @ fa349db5e75a18cd3af7d9d3f1064eb34e92aca1 upgrades to a fixed ConfigSpace;
+    # however, this revision has not yet been released to PyPI, and nprintML cannot be released to
+    # PyPI with non-PyPI dependencies.
+    #
+    # As such, for the time being, numpy will be presumed in building nprintML, and nprintML
+    # released as-is with the latest release of Autogluon.
+    #
+    # The Autogluon requirement should be upgraded as soon as possible, and the numpy dependency
+    # removed from setup.cfg (tox).
+    #
+    # See nprintML @ 32ce3a2 for more information.
+    #
     'autogluon ~= 0.0.14',
     'scikit-learn ~= 0.23.2',
 
@@ -40,7 +55,7 @@ EXTRAS_REQUIRE = {
 
 
 setup(name='nprintml',
-      version='0.0.0',
+      version='0.0.1',
       description='Fully automated traffic analysis with nPrint',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",
@@ -50,7 +65,7 @@ setup(name='nprintml',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=[
-          'Development Status :: 1 - Planning',
+          'Development Status :: 2 - Pre-Alpha',
           'Intended Audience :: Developers',
           'Intended Audience :: Education',
           'Intended Audience :: Information Technology',

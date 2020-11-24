@@ -21,7 +21,7 @@ nprintML further requires nPrint (see below).
 
 ### Installation
 
-nprintML itself is available for download from the [Python Package Index (PyPI)](https://pypi.org/) and via `pip`:
+nprintML itself is available for download from the [Python Package Index (PyPI)](https://pypi.org/project/nprintml/) and via `pip`:
 
     python -m pip install nprintml
 

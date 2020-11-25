@@ -1,0 +1,10 @@
+item,label
+174.25.186.210,encrypted
+238.4.62.5,encrypted
+243.186.23.169,unencrypted
+244.106.52.188,unencrypted
+248.55.22.6,encrypted
+35.14.245.95,encrypted
+48.171.190.166,encrypted
+74.189.204.184,unencrypted
+74.70.77.194,encrypted

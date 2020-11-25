@@ -62,7 +62,37 @@ In case of command path ambiguity and in support of debugging, the `nprintml` co
 
 ---
 
-THIS IS HOW YOU USE IT!
+nPrintML can be used in many different ways, including on an entire directory of PCAPs or a single PCAP, which are fully outlined [in the wiki](https://github.com/nprint/nprintML/wiki/nPrintML). A simple example involve per-packet machine learning on a PCAP with IP address labels.
+
+`nprintml -a index -L labels.txt -P test.pcap -4`
+
+This tells nprintML to attach labels to each nPrint's default index (source IP address) resulting from running nPrint on `test.pcap`.
+
+The label file should **always** be formatted as follows:
+
+```
+Item,Label # (header line)
+IP1,label1,
+IP2,label2,
+IP3,label3,
+...
+```
+
+Through this labeling scheme we can attach labels to ports, ip addresses, and entire flows with nPrintML. For more information and advanced usage see the [wiki](https://github.com/nprint/nprintML/wiki/nPrintML).
+
+Another example of using nPrintML is running a machine learning pipeline where every PCAP contains a single sample for training / testing. The following command will create a machine learning pipeline using every pcap in the directory `pcaps` and the labels in `labels.txt` with IPv4 nPrints.
+
+`nml -a pcap --pcap_dir pcaps/ -L labels.txt -4`
+
+The label file follows the same format as single PCAP usage:
+
+```
+Item,Label # (header line)
+path/name1.pcap,label1,
+path/name2.pcap,label2,
+path/name3.pcap,label3,
+...
+```
 
 
 ## Development

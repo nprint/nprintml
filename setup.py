@@ -30,7 +30,7 @@ INSTALL_REQUIRES = [
     #
     # See nprintML @ 32ce3a2 for more information.
     #
-    'autogluon ~= 0.0.24',
+    'autogluon ~= 0.0.14',
     'scikit-learn ~= 0.23.2',
 
     'matplotlib ~= 3.3.3',

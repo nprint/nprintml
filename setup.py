@@ -30,7 +30,7 @@ INSTALL_REQUIRES = [
     #
     # See nprintML @ 32ce3a2 for more information.
     #
-    'autogluon ~= 0.0.14',
+    'autogluon ~= 0.0.24',
     'scikit-learn ~= 0.23.2',
 
     'matplotlib ~= 3.3.3',
@@ -55,7 +55,7 @@ EXTRAS_REQUIRE = {
 
 
 setup(name='nprintml',
-      version='0.0.1',
+      version='0.0.2',
       description='Fully automated traffic analysis with nPrint',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",

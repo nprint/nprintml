@@ -153,7 +153,26 @@ class Net(pipeline.Step):
         outdir.mkdir()
         return outdir
 
-    def generate_argv(self, args, pcap_file=None):
+    @staticmethod
+    def make_output_path(outdir, pcap_file, dir_basis):
+        if not pcap_file:
+            return None
+
+        npt_file = pathlib.Path(pcap_file).with_suffix('.npt')
+        if dir_basis:
+            npt_file = npt_file.relative_to(dir_basis)
+        else:
+            npt_file = npt_file.name
+
+        npt_path = outdir / npt_file
+
+        if npt_path.exists():
+            raise FileExistsError(None, 'nPrint output path collision', str(npt_path))
+
+        npt_path.parent.mkdir(parents=True, exist_ok=True)
+        return npt_path
+
+    def generate_argv(self, args, pcap_file=None, npt_file=None):
         """Construct arguments for `nprint` command."""
         # generate shared/global arguments
         if args.verbose:
@@ -179,20 +198,7 @@ class Net(pipeline.Step):
 
         # add output path
         outdir = self.get_output_directory(args)
-        outname_stem = pathlib.Path(pcap_file).stem if pcap_file else 'netcap'
-        outpath = outdir / f'{outname_stem}.npt'
-        if outpath.exists():
-            last_paths = sorted(outdir.glob(f'{outname_stem}.[0-9][0-9][0-9].npt'), reverse=True)
-            if last_paths:
-                last_match = re.fullmatch(outname_stem + r'\.(\d{3})\.npt', last_paths[0])
-                last_subext = last_match.group(1)
-                subext = int(last_subext) + 1
-            else:
-                subext = 1
-
-            outpath = outdir / f'{outname_stem}.{subext:03d}.npt'
-            assert not outpath.exists()
-
+        outpath = npt_file or outdir / 'netcap.npt'
         yield from ('--write_file', str(outpath))
 
     def __call__(self, args, results):
@@ -205,17 +211,21 @@ class Net(pipeline.Step):
         outdir = self.make_output_directory(args)
 
         if args.pcap_file or args.pcap_dir:
+            # stream pair of pcap path & "basis" for reconstructing tree
             pcap_files = itertools.chain(
-                args.pcap_file,
-                itertools.chain.from_iterable(pcap_dir.glob('*.pcap')
-                                              for pcap_dir in args.pcap_dir),
+                zip(args.pcap_file, itertools.repeat(None)),
+                itertools.chain.from_iterable(
+                    zip(pcap_dir.rglob('*.pcap'), itertools.repeat(pcap_dir))
+                    for pcap_dir in args.pcap_dir
+                ),
             )
         else:
-            pcap_files = (None,)
+            pcap_files = ((None, None),)
 
-        for pcap_file in pcap_files:
+        for (pcap_file, dir_basis) in pcap_files:
+            npt_file = self.make_output_path(outdir, pcap_file, dir_basis)
             nprint(
-                *self.generate_argv(args, pcap_file),
+                *self.generate_argv(args, pcap_file, npt_file),
             )
 
         return NetResult(outdir)
@@ -319,7 +329,7 @@ class DirectoryAccessType:
 
         if self.non_empty:
             count = 0
-            for (count, child) in enumerate(path.glob('*' + self.ext), 1):
+            for (count, child) in enumerate(path.rglob('*' + self.ext), 1):
                 if not os.access(child, os.R_OK):
                     raise argparse.ArgumentTypeError(f"path(s) not read-accessible '{child}'")
 

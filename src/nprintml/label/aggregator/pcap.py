@@ -42,9 +42,7 @@ class PcapLabelAggregator(LabelAggregator):
             print('  compressed nPrint shape:', npts.shape)
 
         print('Attaching labels to nPrints')
-
         labels = self.load_label(self.label_csv)
-        labels = self.rewrite_labels(labels, npts)
 
         (npt_df, missing_labels, ogns, nns) = self.attach_label(npts, labels)
 
@@ -52,25 +50,23 @@ class PcapLabelAggregator(LabelAggregator):
         print('    missing labels caused samples to be dropped:', (ogns - nns))
 
         return npt_df
-    
-    def rewrite_labels(self, labels, npts):
-        """Transfer original PCAP labels to new nPrint files so that labels
-        can be correctly aggregated
 
-        """
-        new_labels = []
-        stems = {}
-        # Get stems for orignal files
-        for row in labels.itertuples():
-            stems[pathlib.PurePath(row.Index).stem] = row.Label
-    
-        # Associate old labels with new nPrint files
-        for row in npts.itertuples():
-            stem = pathlib.PurePath(row.Index).stem
-            if stem in stems:
-                new_labels.append((row.Index, stems[stem]))
+    def load_label(self, labels_csv):
+        labels = super().load_label(labels_csv)
 
-        return pd.DataFrame(new_labels, columns=['item', 'label']).set_index('item')
+        # Enable join on file path index with .npt-derived data --
+        # strip any file suffix like .pcap (or .npt)
+        #
+        # (Unlike with former, which strictly loaded .pcap files, mapped these to .npt files, and
+        # constructed its index from actual file paths, here we are loading file path values from
+        # user-specified CSV data. As such, we won't assume too much about what suffix the user
+        # supplied -- if any -- though .pcap is suggested.)
+        #
+        # Use regular expression rather than path method in case no extension specified, etc.,
+        # (as intent is to strip it after all -- extension not meaningful):
+        labels.index = labels.index.str.replace(r'\.(pcap|npt)$', '', case=False)
+
+        return labels
 
     def merge_npt(self):
         """Merge nPrint data from multiple output files."""
@@ -80,8 +76,8 @@ class PcapLabelAggregator(LabelAggregator):
         npt_paths = []
         largest_npt = None
         file_count = 0
-        npt_files = (npt_file for npt_file in self.npt_csv.iterdir() if npt_file.is_file())
-        
+        npt_files = (npt_file for npt_file in self.npt_csv.rglob('*') if npt_file.is_file())
+
         for (file_count, npt_file) in enumerate(npt_files, 1):
             npt = self.load_npt(npt_file)
 
@@ -89,7 +85,7 @@ class PcapLabelAggregator(LabelAggregator):
                 largest_npt = npt
 
             npts0.append(npt)
-            npt_paths.append(str(npt_file))
+            npt_paths.append(str(npt_file.relative_to(self.npt_csv).with_suffix('')))
 
         print('Loaded', file_count, 'nprints')
 
@@ -97,7 +93,7 @@ class PcapLabelAggregator(LabelAggregator):
         # largest nPrint in all of the files and pad each sample with
         # empty nPrints.
 
-        row_len = npts0[0].shape[1]
+        row_len = npts0[0].shape[1] if npts0 else 0
         fill_row = [-1] * row_len
 
         npts1 = []
@@ -108,11 +104,15 @@ class PcapLabelAggregator(LabelAggregator):
             npt_flat = npt.to_numpy().flatten()
             npts1.append(npt_flat)
 
-        cols_flat = self.flatten_columns(largest_npt.columns, largest_npt.shape[0])
+        if largest_npt is None:
+            cols_flat = ()
+        else:
+            cols_flat = self.flatten_columns(largest_npt.columns, largest_npt.shape[0])
 
         npts = pd.DataFrame(npts1, index=npt_paths, columns=cols_flat)
 
-        print('nPrints padded to maximum size:', largest_npt.shape[0])
+        print('nPrints padded to maximum size:',
+              largest_npt if largest_npt is None else largest_npt.shape[0])
         print('nPrint shape:', npts.shape)
 
         return npts

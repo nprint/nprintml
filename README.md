@@ -68,12 +68,12 @@ A simple example involves per-packet machine learning given a single PCAP and IP
 
 The above instructs nprintML to execute a traffic analysis pipeline considering each packet in the file `test.pcap` as a sample, and to attach labels to each source IP address (nPrint's default index) as specified in `labels.txt`.
 
-The label file should **always** be formatted as follows:
+The label file should be formatted as follows:
 
-    Item,Label # (header line)
-    IP1,label1,
-    IP2,label2,
-    IP3,label3,
+    Item,Label  # (optional header line)
+    IP1,label1
+    IP2,label2
+    IP3,label3
     ...
 
 Through this labeling scheme we can attach labels to ports, ip addresses, and entire flows with nPrintML. For more information and advanced usage see [the wiki](https://github.com/nprint/nprintML/wiki/nPrintML).
@@ -84,10 +84,10 @@ Another example of using nPrintML is running a machine learning pipeline where e
 
 The label file for the above follows the same format as in single PCAP usage, with only the `Item` column changing to specify file names as opposed to IP addresses:
 
-    Item,Label # (header line)
-    path/name1.pcap,label1,
-    path/name2.pcap,label2,
-    path/name3.pcap,label3,
+    item,label  # (optional header line)
+    path/name1.pcap,label1
+    path/name2.pcap,label2
+    path/name3.pcap,label3
     ...
 
 Note that the `path/` in the above example is the path relative to the directory specified by `--pcap-dir`, that is relative to the directory `pcaps/`.

@@ -39,8 +39,26 @@ class LabelAggregator(abc.ABC):
         """Load labels, which are expected to be in item, label column
         format where item is the index.
 
+        A header line "item,label" (case-insensitive) is optional.
+
+        For example:
+
+            item,label
+            key1,label1
+            key2,label2
+            key3,label3
+
         """
-        return pd.read_csv(labels_csv, index_col=0)
+        # enforce column names (item, label)
+        label = pd.read_csv(labels_csv, index_col='item', names=('item', 'label'))
+
+        # check for optional header line
+        if not label.empty:
+            row0 = label.iloc[0]
+            if row0.name.lower() == 'item' and row0.label.lower() == 'label':
+                return label.iloc[1:]
+
+        return label
 
     def compress_npt(self, npt):
         """Compress columns out of an nPrint that provide no predictive
@@ -60,17 +78,17 @@ class LabelAggregator(abc.ABC):
         that were lost.
 
         """
-        missing_labels = set(npt.index) - set(label.index)
-        og_num_samples = npt.shape[0]
+        samples0 = len(npt)
+        missing_labels = npt.index.difference(label.index).tolist()
 
         try:
             npt = npt.join(label).dropna(subset=['label'])
         except KeyError as exc:
             raise LabelError("label input is malformed") from exc
 
-        new_num_samples = npt.shape[0]
+        samples1 = len(npt)
 
-        return (npt, missing_labels, og_num_samples, new_num_samples)
+        return (npt, missing_labels, samples0, samples1)
 
     def flatten_columns(self, columns, sample_size):
         """When we attach labels to more than one nPrint we need to

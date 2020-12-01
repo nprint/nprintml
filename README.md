@@ -60,7 +60,7 @@ In case of command path ambiguity and in support of debugging, the `nprintml` co
 
     python -m nprintml ...
 
-The nPrintML traffic analysis pipeline is customizable. Traffic ingestion leverages nPrint, and as such supports its inputs. In addition, beyond a single PCAP file, nprintML may ingest multiple PCAP files and recursive directories of files, as outlined [in the wiki](https://github.com/nprint/nprintML/wiki/nPrintML).
+The nPrintML traffic analysis pipeline is customizable. Traffic ingestion leverages nPrint, and as such supports its inputs. In addition, beyond a single PCAP file, nprintML may ingest multiple PCAP files and recursive directories of files, as outlined [in the wiki](https://github.com/nprint/nprintML/wiki).
 
 A simple example involves per-packet machine learning given a single PCAP and IP address labels:
 
@@ -76,7 +76,7 @@ The label file should be formatted as follows:
     IP3,label3
     ...
 
-Through this labeling scheme we can attach labels to ports, ip addresses, and entire flows with nPrintML. For more information and advanced usage see [the wiki](https://github.com/nprint/nprintML/wiki/nPrintML).
+Through this labeling scheme we can attach labels to ports, ip addresses, and entire flows with nPrintML. For more information and advanced usage see [the wiki](https://github.com/nprint/nprintML/wiki).
 
 Another example of using nPrintML is running a machine learning pipeline where every PCAP is considered to contain a single sample. The following command &ndash; (this time using terse aliases) &ndash; will create a machine learning pipeline using every PCAP file in the directory `pcaps/` and the labels in `labels.txt` with IPv4 nPrints:
 

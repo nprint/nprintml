@@ -84,6 +84,7 @@ class Learn(pipeline.Step):
             quality=args.quality,
             time_limits=args.time_limits,
             n_threads=args.n_threads,
+            verbosity=args.verbosity,
         )
 
         return LearnResult(

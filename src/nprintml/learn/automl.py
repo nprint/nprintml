@@ -63,6 +63,8 @@ class AutoML:
 
     TIME_LIMITS = 5 * 60
 
+    VERBOSITY = 1
+
     def __init__(self, data, outpath):
         self.data = data
         self.outpath = outpath
@@ -76,16 +78,16 @@ class AutoML:
         return self.outpath / self.models_dirname
 
     def __call__(self, test_size=TEST_SIZE, eval_metric=EVAL_METRIC, quality=QUALITY,
-                 time_limits=TIME_LIMITS, n_threads=N_THREADS):
+                 time_limits=TIME_LIMITS, n_threads=N_THREADS, verbosity=VERBOSITY):
         """Train, test, and evaluate models."""
         (train_data, test_data) = train_test_split(self.data, test_size=test_size)
         predictor = self.train(train_data, eval_metric, quality, time_limits,
-                               n_threads)
+                               n_threads, verbosity=verbosity)
         self.test(predictor, test_data)
         self.graph_all(predictor, test_data)
 
     def train(self, train_data, eval_metric=EVAL_METRIC, quality=QUALITY,
-              time_limits=TIME_LIMITS, n_threads=N_THREADS):
+              time_limits=TIME_LIMITS, n_threads=N_THREADS, verbosity=VERBOSITY):
         """Train prospective models."""
         # predictor gives us default access to the *best* predictor that
         # was trained on the task (otherwise we're just wrapping AutoGluon)
@@ -94,7 +96,8 @@ class AutoML:
                         output_directory=self.outpath,
                         time_limits=time_limits,
                         presets=self.QUALITY_PRESETS[quality],
-                        nthreads_per_trial=n_threads)
+                        nthreads_per_trial=n_threads,
+                        verbosity=verbosity)
 
     def test(self, predictor, test_data):
         """Evaluate models on the test set and write the results to file."""

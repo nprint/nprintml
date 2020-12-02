@@ -76,9 +76,32 @@ def build_parser(**parser_kwargs):
     )
 
     parser.add_argument(
+        '-Q', '--quiet',
+        dest='verbosity',
+        action='store_const',
+        const=0,
+        help="minimal output verbosity",
+    )
+    parser.add_argument(
         '-V', '--verbose',
-        action='store_true',
-        help="print human readable packets with nPrints",
+        dest='verbosity',
+        action='store_const',
+        const=2,
+        help="increased output verbosity",
+    )
+    parser.add_argument(
+        '-VV', '--very-verbose',
+        dest='verbosity',
+        action='store_const',
+        const=3,
+        help="high output verbosity (e.g. print human readable packets with nPrints)",
+    )
+    parser.add_argument(
+        '-VVV', '--debug',
+        dest='verbosity',
+        action='store_const',
+        const=4,
+        help="highest output verbosity",
     )
 
     parser.add_argument(
@@ -100,6 +123,7 @@ def build_parser(**parser_kwargs):
     )
 
     parser.set_defaults(
+        verbosity=1,
         __parser__=parser,
     )
 

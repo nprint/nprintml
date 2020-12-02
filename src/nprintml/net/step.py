@@ -175,7 +175,7 @@ class Net(pipeline.Step):
     def generate_argv(self, args, pcap_file=None, npt_file=None):
         """Construct arguments for `nprint` command."""
         # generate shared/global arguments
-        if args.verbose:
+        if args.verbosity >= 3:
             yield '--verbose'
 
         # support arbitrary pcap infile(s)

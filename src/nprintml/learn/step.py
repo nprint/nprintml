@@ -45,7 +45,7 @@ class Learn(pipeline.Step):
             metavar='{...}',
             help=f"metric by which predictions will be evaluated (default: {AutoML.EVAL_METRIC})\n"
                  "select from:\n    " +
-                 '\n    '.join(AutoML.EVAL_METRICS_ALL),
+                 ', '.join(AutoML.EVAL_METRICS_ALL),
         )
         group_parser.add_argument(
             '-q', '--quality',

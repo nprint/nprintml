@@ -32,7 +32,7 @@ class Net(pipeline.Step):
         self.group_parser = parser.add_argument_group(
             "extraction of features from network traffic via nPrint",
 
-            "Full information can be found at https://nprint.github.io/nprint/"
+            "(full information can be found at https://nprint.github.io/nprint/)"
         )
 
         self.group_parser.add_argument(

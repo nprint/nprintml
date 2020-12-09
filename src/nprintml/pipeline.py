@@ -16,6 +16,11 @@ steps to determine. Required values are specified as a sequence of
 attribute names at the step's class level attribute
 `__requires__ = ('name0', 'name1', ...)`.
 
+Steps may indicate the `results` attributes they will provide via class
+level attribute `__provides__`, the value of which may be either a
+sequence of attribute names OR a supported result class -- either a
+class of type `namedtuple` or `dataclass`.
+
 Steps may report their execution results by returning their own results
 object from their `__call__`. (Generic objects and named tuples are
 supported. Also consider the `dataclasses` decorator package.)
@@ -49,6 +54,8 @@ A simple pipeline example follows:
 
     class GetData(Step):
 
+        __provides__ = GetDataResult
+
         def __init__(self, parser):
             parser.add_argument(
                 '-u', '--url',
@@ -70,6 +77,7 @@ A simple pipeline example follows:
 
     class UseData(Step):
 
+        __provides__ = UseDataResult
         __requires__ = ('data_path',)
 
         def __init__(self, parser):
@@ -173,6 +181,13 @@ class Step(metaclass=StepMeta):
             ...
 
     """
+    #: Sequence of data keys to be set on the results object or returned
+    #: for merging into the results object OR a supported Step results
+    #: class from which these may be determined.
+    #: Allows Pipeline to ensure that other Steps' __requires__ are met.
+    #: Sequences of keys, namedtuples and dataclasses are supported.
+    __provides__ = ()
+
     #: Sequence of data keys on the results object -- gathered from the
     #: execution of preceding steps -- required for this step to execute
     __requires__ = ()
@@ -216,7 +231,7 @@ class Step(metaclass=StepMeta):
         return 'step:' + self.__class__.__name__
 
 
-class Pipeline(set):
+class Pipeline(list):
     """Pipeline of executable Steps, instantiated from and extending an
     `ArgumentParser`, and executed upon iterative invocation.
 
@@ -224,10 +239,10 @@ class Pipeline(set):
     those Steps registered under the pipeline's `__default_registry__`
     are used.
 
-    The pipeline is itself a `set` of instantiated steps to be executed.
-    Step execution order is determined at run-time, according to
-    `Step.__requires__`, and those result keys which steps have
-    returned. If step requirements cannot be met by a given pipeline,
+    The pipeline is itself a `list` of instantiated steps to be
+    executed. Step execution order is determined upon instantiation,
+    according to `Step.__provides__` and `Step.__requires__`. If step
+    requirements cannot be met by a given pipeline,
     `StepRequirementError` is raised.
 
     Steps are removed from the pipeline collection as they are executed.
@@ -270,6 +285,40 @@ class Pipeline(set):
     #: Default constructor for composite results object
     results_class = types.SimpleNamespace
 
+    @staticmethod
+    def resolve(registry):
+        """Generate Steps from the given `registry` in their requisite
+        order.
+
+        Step dependencies are determined from Steps' `__provides__` and
+        `__requires__`.
+
+        """
+        # input registry may be any iterable
+        steps = set(registry)
+        run = []
+        results = set()
+
+        while steps:
+            steps_satisfied = [step for step in steps if results.issuperset(step.__requires__)]
+
+            if not steps_satisfied:
+                raise StepRequirementError(run, steps, results)
+
+            for step in steps_satisfied:
+                try:
+                    provides = step.__provides__._fields
+                except AttributeError:
+                    try:
+                        provides = step.__provides__.__dataclass_fields__
+                    except AttributeError:
+                        provides = step.__provides__
+
+                results.update(provides)
+                run.append(step)
+                steps.remove(step)
+                yield step
+
     def __init__(self, parser, registry=None):
         """Construct a Pipeline of Steps extending the given
         `ArgumentParser`.
@@ -278,7 +327,7 @@ class Pipeline(set):
         if registry is None:
             registry = self.__default_registry__
 
-        super().__init__(step(parser) for step in registry)
+        super().__init__(step(parser) for step in self.resolve(registry))
 
         self.results = None
 
@@ -286,20 +335,22 @@ class Pipeline(set):
         """Construct an iterator to execute the steps of the pipeline."""
         self.results = self.results_class() if results is None else results
 
-        while self:
+        run = []
+
+        for step in self[:]:
             results_available = set(self.results.__dict__.keys())
-            steps_satisfied = [step for step in self
-                               if results_available.issuperset(step.__requires__)]
 
-            if not steps_satisfied:
-                raise StepRequirementError(self, results_available)
+            if not results_available.issuperset(step.__requires__):
+                raise StepRequirementError(run, self, results_available)
 
-            for step in steps_satisfied:
-                step_results = step(args, self.results)
-                if step_results is not None:
-                    self.merge(step_results)
-                self.remove(step)
-                yield (step, step_results)
+            step_results = step(args, self.results)
+            if step_results is not None:
+                self.merge(step_results)
+
+            run.append(step)
+            self.remove(step)
+
+            yield (step, step_results)
 
     def exhaust(self, args, results=None):
         """Execute the steps of the pipeline (non-iteratively)."""
@@ -331,11 +382,13 @@ class StepRequirementError(PipelineError):
 
     message = "step requirements could not be satisfied"
 
-    def __init__(self, steps, results_available):
+    def __init__(self, steps_run, steps_remaining, results_available):
         super().__init__(
             self.message,
-            steps,
+            steps_run,
+            steps_remaining,
             results_available,
         )
-        self.steps = steps
+        self.steps_run = steps_run
+        self.steps_remaining = steps_remaining
         self.results_available = results_available

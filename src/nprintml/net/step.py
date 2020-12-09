@@ -26,6 +26,8 @@ class Net(pipeline.Step):
     Returns a `NetResult`.
 
     """
+    __provides__ = NetResult
+
     def __init__(self, parser):
         self.group_parser = parser.add_argument_group(
             "extraction of features from network traffic via nPrint",

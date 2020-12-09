@@ -21,6 +21,7 @@ class Learn(pipeline.Step):
     Returns a `LearnResult`.
 
     """
+    __provides__ = LearnResult
     __requires__ = ('features',)
 
     def __init__(self, parser):

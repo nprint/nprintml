@@ -27,6 +27,7 @@ class Label(pipeline.Step):
     Returns a `LabelResult`.
 
     """
+    __provides__ = LabelResult
     __requires__ = ('nprint_path',)
 
     def __init__(self, parser):

@@ -6,12 +6,13 @@ import pathlib
 import re
 import sys
 import textwrap
+import time
 import typing
 
 import nprintml
 from nprintml import pipeline
 
-from .execute import nprint
+from .execute import CommandError, nprint, nPrintProcess
 
 
 class NetResult(typing.NamedTuple):
@@ -203,6 +204,46 @@ class Net(pipeline.Step):
         outpath = npt_file or outdir / 'netcap.npt'
         yield from ('--write_file', str(outpath))
 
+    @staticmethod
+    def generate_files(args):
+        if args.pcap_file or args.pcap_dir:
+            # stream pair of pcap path & "basis" for reconstructing tree
+            for pcap_file in args.pcap_file:
+                yield (pcap_file, None)
+
+            for pcap_dir in args.pcap_dir:
+                for pcap_file in pcap_dir.rglob('*.pcap'):
+                    yield (pcap_file, pcap_dir)
+
+            return
+
+        yield (None, None)
+
+    def generate_procs(self, args, pcap_files, outdir):
+        for (pcap_file, dir_basis) in pcap_files:
+            npt_file = self.make_output_path(outdir, pcap_file, dir_basis)
+
+            yield nPrintProcess(
+                *self.generate_argv(args, pcap_file, npt_file),
+            )
+
+    @staticmethod
+    def pool_procs(proc_stream, size, wait=None):
+        sleep_time = os.sched_rr_get_interval(0) if wait is None else wait / 1_000
+
+        pool = list(itertools.islice(proc_stream, size))
+
+        while any(pool):
+            if sleep_time != 0:
+                time.sleep(sleep_time)
+
+            for (index, proc) in enumerate(pool):
+                if proc and proc.poll() is not None:
+                    if proc.returncode != 0:
+                        raise CommandError
+
+                    pool[index] = next(proc_stream, None)
+
     def __call__(self, args, results):
         try:
             warn_version_mismatch()
@@ -212,23 +253,11 @@ class Net(pipeline.Step):
 
         outdir = self.make_output_directory(args)
 
-        if args.pcap_file or args.pcap_dir:
-            # stream pair of pcap path & "basis" for reconstructing tree
-            pcap_files = itertools.chain(
-                zip(args.pcap_file, itertools.repeat(None)),
-                itertools.chain.from_iterable(
-                    zip(pcap_dir.rglob('*.pcap'), itertools.repeat(pcap_dir))
-                    for pcap_dir in args.pcap_dir
-                ),
-            )
-        else:
-            pcap_files = ((None, None),)
+        pcap_files = self.generate_files(args)
 
-        for (pcap_file, dir_basis) in pcap_files:
-            npt_file = self.make_output_path(outdir, pcap_file, dir_basis)
-            nprint(
-                *self.generate_argv(args, pcap_file, npt_file),
-            )
+        processes = self.generate_procs(args, pcap_files, outdir)
+
+        self.pool_procs(processes, size=args.concurrency)
 
         return NetResult(outdir)
 

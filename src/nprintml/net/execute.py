@@ -24,15 +24,9 @@ def nprint(*args, stdin=None, stdout=None, stderr=None, check=True):
     Returns the resulting `subprocess.CompletedProcess`.
 
     """
-    # ensure we know what we're running via which
-    cmd = shutil.which('nprint')
-
-    if cmd is None:
-        raise NoCommand
-
     try:
         return subprocess.run(
-            (cmd,) + args,
+            _nprint_args(*args),
             stdin=stdin,
             stdout=stdout,
             stderr=stderr,
@@ -40,6 +34,28 @@ def nprint(*args, stdin=None, stdout=None, stderr=None, check=True):
         )
     except subprocess.CalledProcessError as exc:
         raise CommandError from exc
+
+
+def nPrintProcess(*args, stdin=None, stdout=None, stderr=None):
+    """TODO
+
+    """
+    return subprocess.Popen(
+        _nprint_args(*args),
+        stdin=stdin,
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
+def _nprint_args(*args):
+    # ensure we know what we're running via which
+    cmd = shutil.which('nprint')
+
+    if cmd is None:
+        raise NoCommand
+
+    return (cmd,) + args
 
 
 class nPrintError(Exception):
@@ -57,3 +73,6 @@ class NoCommand(nPrintError):
 nprint.CommandError = CommandError
 nprint.NoCommand = NoCommand
 nprint.PIPE = subprocess.PIPE
+
+nPrintProcess.NoCommand = NoCommand
+nPrintProcess.PIPE = subprocess.PIPE

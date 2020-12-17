@@ -69,11 +69,10 @@ class Learn(pipeline.Step):
         )
         group_parser.add_argument(
             '--threads',
-            default=AutoML.N_THREADS,
             dest='n_threads',
             metavar='INTEGER',
             type=NumericRangeType(int, (0, None)),
-            help=f"number of CPU threads to dedicate to training (default: {AutoML.N_THREADS})",
+            help="number of CPU threads to dedicate to training (default: same as --concurrency)",
         )
 
     def __call__(self, args, results):
@@ -84,7 +83,7 @@ class Learn(pipeline.Step):
             eval_metric=args.eval_metric,
             quality=args.quality,
             time_limits=args.time_limits,
-            n_threads=args.n_threads,
+            n_threads=(args.n_threads or args.concurrency),
             verbosity=args.verbosity,
         )
 

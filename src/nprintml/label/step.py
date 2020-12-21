@@ -65,11 +65,25 @@ class Label(pipeline.Step):
             action='store_true',
             help="drop columns which do not appear to provide any predictive signal",
         )
+        group_parser.add_argument(
+            '--no-write-features',
+            action='store_false',
+            default=True,
+            dest='write_features',
+            help="disable writing of features to disk (enabled by default for inspection & reuse)",
+        )
 
     def __call__(self, args, results):
         aggregator_class = aggregators[args.aggregator]
         aggregator = aggregator_class(results.nprint_path, args.label_file)
         features = aggregator(compress=args.compress, sample_size=args.sample_size)
+
+        if args.write_features:
+            outdir = args.outdir / 'feature'
+            outdir.mkdir()
+
+            features.to_csv(outdir / 'features.csv.gz')
+
         return LabelResult(features)
 
 

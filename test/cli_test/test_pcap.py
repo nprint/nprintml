@@ -43,6 +43,9 @@ class TestPcap(CLITestCase):
         npt_path = temp_path / 'nprint' / 'test.npt'
         self.assertTrue(npt_path.exists())
 
+        feature_path = temp_path / 'feature' / 'features.csv.gz'
+        self.assertTrue(feature_path.exists())
+
         graphs_path = temp_path / 'model' / 'graphs'
         self.assertTrue(any(graphs_path.glob('*.pdf')))
 
@@ -68,6 +71,9 @@ class TestPcap(CLITestCase):
         npt_path_unencrypted = temp_path / 'nprint' / 'unencrypted'
         self.assertTrue(any(npt_path_encrypted.glob('*.npt')))
         self.assertTrue(any(npt_path_unencrypted.glob('*.npt')))
+
+        feature_path = temp_path / 'feature' / 'features.csv.gz'
+        self.assertTrue(feature_path.exists())
 
         graphs_path = temp_path / 'model' / 'graphs'
         self.assertTrue(any(graphs_path.glob('*.pdf')))

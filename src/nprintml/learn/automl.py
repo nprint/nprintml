@@ -85,6 +85,11 @@ class AutoML:
                                n_threads, verbosity=verbosity)
         self.test(predictor, test_data)
         self.graph_all(predictor, test_data)
+        self.save_features()
+
+    def save_features(self):
+        print(self.outpath)
+        self.data.to_csv(self.outpath / 'automl-df.csv.gz')
 
     def train(self, train_data, eval_metric=EVAL_METRIC, quality=QUALITY,
               time_limits=TIME_LIMITS, n_threads=N_THREADS, verbosity=VERBOSITY):

@@ -175,6 +175,21 @@ class Net(pipeline.Step):
         npt_path.parent.mkdir(parents=True, exist_ok=True)
         return npt_path
 
+    @staticmethod
+    def generate_files(args):
+        if args.pcap_file or args.pcap_dir:
+            # stream pair of pcap path & "basis" for reconstructing tree
+            for pcap_file in args.pcap_file:
+                yield (pcap_file, None)
+
+            for pcap_dir in args.pcap_dir:
+                for pcap_file in pcap_dir.rglob('*.pcap'):
+                    yield (pcap_file, pcap_dir)
+
+            return
+
+        yield (None, None)
+
     def generate_argv(self, args, pcap_file=None, npt_file=None):
         """Construct arguments for `nprint` command."""
         # generate shared/global arguments
@@ -203,21 +218,6 @@ class Net(pipeline.Step):
         outdir = self.get_output_directory(args)
         outpath = npt_file or outdir / 'netcap.npt'
         yield from ('--write_file', str(outpath))
-
-    @staticmethod
-    def generate_files(args):
-        if args.pcap_file or args.pcap_dir:
-            # stream pair of pcap path & "basis" for reconstructing tree
-            for pcap_file in args.pcap_file:
-                yield (pcap_file, None)
-
-            for pcap_dir in args.pcap_dir:
-                for pcap_file in pcap_dir.rglob('*.pcap'):
-                    yield (pcap_file, pcap_dir)
-
-            return
-
-        yield (None, None)
 
     def generate_procs(self, args, pcap_files, outdir):
         for (pcap_file, dir_basis) in pcap_files:

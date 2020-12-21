@@ -37,7 +37,23 @@ def nprint(*args, stdin=None, stdout=None, stderr=None, check=True):
 
 
 def nPrintProcess(*args, stdin=None, stdout=None, stderr=None):
-    """TODO
+    """Construct a subprocess to execute the `nprint` command.
+
+    Argumentation reflects that of `subprocess.Popen`.
+
+    The `PIPE` sentinel is made available via the object of the
+    constructor:
+
+        nPrintProcess.PIPE
+
+    If the `nprint` command cannot be found on the PATH, then
+    `NoCommand` is raised. This exception is also made available on the
+    constructor --
+
+        nPrintProcess.NoCommand
+
+    Returns the constructed `subprocess.Popen` object with which to
+    monitor the running command.
 
     """
     return subprocess.Popen(

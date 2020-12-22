@@ -35,7 +35,7 @@ def execute(argv=None, **parser_kwargs):
 
         check_output_directory(args)
 
-        for (step, results) in pipeline(args):
+        for (step, results) in pipeline(parser, args):
             print(step, results, sep=' → ')
 
         print('done →', pipeline.results)

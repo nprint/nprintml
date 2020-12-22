@@ -264,13 +264,14 @@ class Net(pipeline.Step):
 
                     pool[index] = next(proc_stream, None)
 
-    def __call__(self, args, results):
+    def __pre__(self, parser, args, results):
         try:
             warn_version_mismatch()
         except nprint.NoCommand:
-            args.__parser__.error("nprint command could not be found on PATH "
-                                  "(to install see nprint-install)")
+            parser.error("nprint command could not be found on PATH "
+                         "(to install see nprint-install)")
 
+    def __call__(self, args, results):
         outdir = self.make_output_directory(args)
 
         pcap_files = self.generate_files(args)

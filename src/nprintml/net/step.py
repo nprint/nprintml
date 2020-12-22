@@ -10,6 +10,7 @@ import typing
 
 import nprintml
 from nprintml import pipeline
+from nprintml.util import HelpAction
 
 from .execute import nprint
 
@@ -144,6 +145,18 @@ class Net(pipeline.Step):
             action='store_true',
             help="include udp headers",
         )
+        self.group_parser.add_argument(
+            '-x', '--nprint-filter', '--nprint_filter',
+            metavar='STRING',
+            help="regex to filter bits out of nPrint output "
+                 "(for details see --help-nprint-filter)",
+        )
+        self.group_parser.add_argument(
+            '--help-nprint-filter', '--nprint-filter-help', '--nprint_filter_help',
+            action=HelpAction,
+            help_action=lambda *_parser_args: nprint('--nprint_filter_help'),
+            help="describe regex possibilities and exit",
+        )
 
     @staticmethod
     def get_output_directory(args):
@@ -189,8 +202,15 @@ class Net(pipeline.Step):
             if action.dest in ('pcap_file', 'pcap_dir'):
                 continue
 
+            try:
+                value = getattr(args, action.dest)
+            except AttributeError:
+                if action.default == argparse.SUPPRESS:
+                    continue
+
+                raise
+
             key = action.option_strings[-1]
-            value = getattr(args, action.dest)
 
             if value is not action.default:
                 yield key

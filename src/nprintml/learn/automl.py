@@ -57,7 +57,7 @@ class AutoML:
         'best_quality',
     )
 
-    N_THREADS = 1
+    N_THREADS = None
 
     TEST_SIZE = 0.3
 

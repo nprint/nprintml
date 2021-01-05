@@ -111,6 +111,16 @@ def build_parser(**parser_kwargs):
         help="print exception tracebacks",
     )
 
+    cpu_available_count = len(os.sched_getaffinity(0))
+    parser.add_argument(
+        '--concurrency',
+        default=cpu_available_count,
+        metavar='INTEGER',
+        type=int,
+        help="maximum number of concurrent processes to use (defaults to number "
+             f"reported by scheduler: {cpu_available_count})",
+    )
+
     output_default = get_default_directory()
     parser.add_argument(
         '-o', '--output',

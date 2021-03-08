@@ -14,7 +14,11 @@ class IndexLabelAggregator(LabelAggregator):
     label.
 
     """
-    def __init__(self, npt_csv, label_csv):
+    def __call__(self, npt_csv, compress=False, sample_size=1):
+        """Generates index driven features by loading nPrints and
+        attaching labels, grouping by a given sample size if desired.
+
+        """
         if isinstance(npt_csv, str):
             npt_csv = pathlib.Path(npt_csv)
 
@@ -27,15 +31,8 @@ class IndexLabelAggregator(LabelAggregator):
                     f"but specified directory contains none or more than one: '{npt_csv}'"
                 )
 
-        super().__init__(npt_csv, label_csv)
-
-    def __call__(self, compress=False, sample_size=1):
-        """Generates index driven features by loading nPrints and
-        attaching labels, grouping by a given sample size if desired.
-
-        """
-        print('Loading nPrint:', self.filerepr(self.npt_csv))
-        npt = self.load_npt(self.npt_csv)
+        print('Loading nPrint:', self.filerepr(npt_csv))
+        npt = self.load_npt(npt_csv)
 
         print('Loaded 1 nprint')
         print('  nPrint shape:', npt.shape)
@@ -46,8 +43,8 @@ class IndexLabelAggregator(LabelAggregator):
             print('  compressed nPrint shape:', npt.shape)
 
         print('Loading labels:', self.filerepr(self.label_csv))
-        labels = self.load_label(self.label_csv)
-        print('  number of labels:', labels.shape[0])
+        self.labels = self.load_label(self.label_csv)
+        print('  number of labels:', self.labels.shape[0])
 
         if sample_size > 1:
             print('Grouping by sample size')
@@ -55,7 +52,7 @@ class IndexLabelAggregator(LabelAggregator):
             print('  New shape of dataframe:', npt.shape)
 
         print('Attaching labels to nPrints')
-        (npt, missing_labels, ogns, nns) = self.attach_label(npt, labels)
+        (npt, missing_labels, ogns, nns) = self.attach_label(npt, self.labels)
         print('  labels attached: missing labels for:')
         for missing_label in missing_labels:
             print('    {0}'.format(missing_label))

@@ -28,6 +28,7 @@ class Label(pipeline.Step):
     Returns a `LabelResult`.
 
     """
+    __pre_provides__ = ('labels',)
     __provides__ = LabelResult
     __requires__ = ('nprint_path',)
 
@@ -74,10 +75,20 @@ class Label(pipeline.Step):
             help="disable writing of features to disk (enabled by default for inspection & reuse)",
         )
 
-    def __call__(self, args, results):
+        self.aggregator = None
+
+    def __pre__(self, parser, args, results):
         aggregator_class = aggregators[args.aggregator]
-        aggregator = aggregator_class(results.nprint_path, args.label_file)
-        features = aggregator(compress=args.compress, sample_size=args.sample_size)
+        self.aggregator = aggregator_class(args.label_file)
+
+        results.labels = self.aggregator.labels
+
+    def __call__(self, args, results):
+        features = self.aggregator(
+            results.nprint_path,
+            compress=args.compress,
+            sample_size=args.sample_size,
+        )
 
         if args.write_features:
             outdir = args.outdir / 'feature'

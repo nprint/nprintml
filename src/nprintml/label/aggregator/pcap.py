@@ -11,7 +11,15 @@ class PcapLabelAggregator(LabelAggregator):
     size, to run autoML on the generated samples.
 
     """
-    def __init__(self, npt_csv, label_csv):
+    def __init__(self, label_csv):
+        super().__init__(label_csv)
+        self.labels = self.load_label(label_csv)
+
+    def __call__(self, npt_csv, compress=False, sample_size=1):
+        """Enumerate given directory of nPrint data, load, pad to their
+        maximum size, and attach labels.
+
+        """
         if isinstance(npt_csv, str):
             npt_csv = pathlib.Path(npt_csv)
 
@@ -27,14 +35,7 @@ class PcapLabelAggregator(LabelAggregator):
                 f"data file but directory is empty: '{npt_csv}'"
             )
 
-        super().__init__(npt_csv, label_csv)
-
-    def __call__(self, compress=False, sample_size=1):
-        """Enumerate given directory of nPrint data, load, pad to their
-        maximum size, and attach labels.
-
-        """
-        npts = self.merge_npt()
+        npts = self.merge_npt(npt_csv)
 
         if compress:
             print('Compressing nPrint')
@@ -42,7 +43,7 @@ class PcapLabelAggregator(LabelAggregator):
             print('  compressed nPrint shape:', npts.shape)
 
         print('Attaching labels to nPrints')
-        labels = self.load_label(self.label_csv)
+        labels = self.prejoin_label()
 
         (npt_df, missing_labels, ogns, nns) = self.attach_label(npts, labels)
 
@@ -51,24 +52,13 @@ class PcapLabelAggregator(LabelAggregator):
 
         return npt_df
 
-    def load_label(self, labels_csv):
-        labels = super().load_label(labels_csv)
-
+    def prejoin_label(self):
         # Enable join on file path index with .npt-derived data --
-        # strip any file suffix like .pcap (or .npt)
-        #
-        # (Unlike with former, which strictly loaded .pcap files, mapped these to .npt files, and
-        # constructed its index from actual file paths, here we are loading file path values from
-        # user-specified CSV data. As such, we won't assume too much about what suffix the user
-        # supplied -- if any -- though .pcap is suggested.)
-        #
-        # Use regular expression rather than path method in case no extension specified, etc.,
-        # (as intent is to strip it after all -- extension not meaningful):
-        labels.index = labels.index.str.replace(r'\.(pcap|npt)$', '', case=False)
+        # strip any file suffix like .pcap
+        index = self.labels.index.str.replace(r'\.pcap$', '', case=False)
+        return self.labels.set_axis(index)
 
-        return labels
-
-    def merge_npt(self):
+    def merge_npt(self, npt_csv):
         """Merge nPrint data from multiple output files."""
         print('Loading nPrints')
 
@@ -76,7 +66,7 @@ class PcapLabelAggregator(LabelAggregator):
         npt_paths = []
         largest_npt = None
         file_count = 0
-        npt_files = (npt_file for npt_file in self.npt_csv.rglob('*') if npt_file.is_file())
+        npt_files = (npt_file for npt_file in npt_csv.rglob('*') if npt_file.is_file())
 
         for (file_count, npt_file) in enumerate(npt_files, 1):
             npt = self.load_npt(npt_file)
@@ -85,7 +75,7 @@ class PcapLabelAggregator(LabelAggregator):
                 largest_npt = npt
 
             npts0.append(npt)
-            npt_paths.append(str(npt_file.relative_to(self.npt_csv).with_suffix('')))
+            npt_paths.append(str(npt_file.relative_to(npt_csv).with_suffix('')))
 
         print('Loaded', file_count, 'nprints')
 

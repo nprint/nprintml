@@ -139,6 +139,7 @@ metaclass level, via `__default_registry__`.)
 """
 import abc
 import collections
+import itertools
 import types
 
 
@@ -187,6 +188,8 @@ class Step(metaclass=StepMeta):
     #: Allows Pipeline to ensure that other Steps' __requires__ are met.
     #: Sequences of keys, namedtuples and dataclasses are supported.
     __provides__ = ()
+
+    __pre_provides__ = ()
 
     #: Sequence of data keys on the results object -- gathered from the
     #: execution of preceding steps -- required for this step to execute
@@ -304,8 +307,8 @@ class Pipeline(list):
         """
         # input registry may be any iterable
         steps = set(registry)
+        results = set(itertools.chain.from_iterable(step.__pre_provides__ for step in steps))
         run = []
-        results = set()
 
         while steps:
             steps_satisfied = [step for step in steps if results.issuperset(step.__requires__)]

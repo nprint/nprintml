@@ -67,10 +67,49 @@ class TestPcap(CLITestCase):
                         # its stdout a little harder
         )
 
-        npt_path_encrypted = temp_path / 'nprint' / 'encrypted'
-        npt_path_unencrypted = temp_path / 'nprint' / 'unencrypted'
+        npt_path = temp_path / 'nprint'
+
+        npt_path_encrypted = npt_path / 'encrypted'
+        npt_path_unencrypted = npt_path / 'unencrypted'
         self.assertTrue(any(npt_path_encrypted.glob('*.npt')))
         self.assertTrue(any(npt_path_unencrypted.glob('*.npt')))
+
+        npt_count = sum(1 for _npt_file in pathlib.Path(npt_path).rglob('*.npt'))
+        self.assertEqual(npt_count, 202)
+
+        feature_path = temp_path / 'feature' / 'features.csv.gz'
+        self.assertTrue(feature_path.exists())
+
+        graphs_path = temp_path / 'model' / 'graphs'
+        self.assertTrue(any(graphs_path.glob('*.pdf')))
+
+        models_path = temp_path / 'model' / 'models'
+        self.assertTrue(any(models_path.rglob('*.pkl')))
+
+    @testdir
+    def test_pcap_directory_label_subset(self, tempdir):
+        temp_path = pathlib.Path(tempdir)
+
+        self.try_execute(
+            '--tcp',
+            '--ipv4',
+            '--aggregator', 'pcap',
+            '--label-file', TEST_DATA / 'dir-pcap' / 'labels-abridged.txt',
+            '--pcap-dir', TEST_DATA / 'dir-pcap' / 'pcaps',
+            '--output', temp_path,
+            '--quiet',  # autogluon's threading makes capturing/suppressing
+                        # its stdout a little harder
+        )
+
+        npt_path = temp_path / 'nprint'
+
+        npt_path_encrypted = npt_path / 'encrypted'
+        npt_path_unencrypted = npt_path / 'unencrypted'
+        self.assertTrue(any(npt_path_encrypted.glob('*.npt')))
+        self.assertTrue(any(npt_path_unencrypted.glob('*.npt')))
+
+        npt_count = sum(1 for _npt_file in pathlib.Path(npt_path).rglob('*.npt'))
+        self.assertEqual(npt_count, 100)
 
         feature_path = temp_path / 'feature' / 'features.csv.gz'
         self.assertTrue(feature_path.exists())

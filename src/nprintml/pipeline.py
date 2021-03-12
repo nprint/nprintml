@@ -139,6 +139,7 @@ metaclass level, via `__default_registry__`.)
 """
 import abc
 import collections
+import itertools
 import types
 
 
@@ -188,6 +189,8 @@ class Step(metaclass=StepMeta):
     #: Sequences of keys, namedtuples and dataclasses are supported.
     __provides__ = ()
 
+    __pre_provides__ = ()
+
     #: Sequence of data keys on the results object -- gathered from the
     #: execution of preceding steps -- required for this step to execute
     __requires__ = ()
@@ -210,6 +213,14 @@ class Step(metaclass=StepMeta):
     def __init__(self, parser):
         """Initialize Step & extend given `ArgumentParser` with Step's
         command-line interface.
+
+        """
+
+    def __pre__(self, parser, args, results):
+        """Execute preparatory actions.
+
+        Invoked before pipeline is run and Steps' main functionality
+        (`__call__`) is invoked.
 
         """
 
@@ -296,8 +307,8 @@ class Pipeline(list):
         """
         # input registry may be any iterable
         steps = set(registry)
+        results = set(itertools.chain.from_iterable(step.__pre_provides__ for step in steps))
         run = []
-        results = set()
 
         while steps:
             steps_satisfied = [step for step in steps if results.issuperset(step.__requires__)]
@@ -331,9 +342,13 @@ class Pipeline(list):
 
         self.results = None
 
-    def __call__(self, args, results=None):
+    def __call__(self, parser, args, results=None):
         """Construct an iterator to execute the steps of the pipeline."""
         self.results = self.results_class() if results is None else results
+
+        # pre-pipline
+        for step in self:
+            step.__pre__(parser, args, self.results)
 
         run = []
 

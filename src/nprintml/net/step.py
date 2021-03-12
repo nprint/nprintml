@@ -1,5 +1,6 @@
 """Pipeline Step to extract networking traffic via nPrint: Net"""
 import argparse
+import collections
 import itertools
 import os
 import pathlib
@@ -29,8 +30,11 @@ class Net(pipeline.Step):
 
     """
     __provides__ = NetResult
+    __requires__ = ('labels',)
 
     def __init__(self, parser):
+        self.args = None
+
         self.group_parser = parser.add_argument_group(
             "extraction of features from network traffic via nPrint",
 
@@ -159,28 +163,17 @@ class Net(pipeline.Step):
             help="describe regex possibilities and exit",
         )
 
-    @staticmethod
-    def get_output_directory(args):
-        return args.outdir / 'nprint'
+    def get_output_directory(self):
+        return self.args.outdir / 'nprint'
 
-    @classmethod
-    def make_output_directory(cls, args):
-        outdir = cls.get_output_directory(args)
+    def make_output_directory(self):
+        outdir = self.get_output_directory()
         outdir.mkdir()
         return outdir
 
     @staticmethod
-    def make_output_path(outdir, pcap_file, dir_basis):
-        if not pcap_file:
-            return None
-
-        npt_file = pathlib.Path(pcap_file).with_suffix('.npt')
-        if dir_basis:
-            npt_file = npt_file.relative_to(dir_basis)
-        else:
-            npt_file = npt_file.name
-
-        npt_path = outdir / npt_file
+    def make_output_path(outdir, pcap_output):
+        npt_path = (outdir / pcap_output).with_suffix('.npt')
 
         if npt_path.exists():
             raise FileExistsError(None, 'nPrint output path collision', str(npt_path))
@@ -188,14 +181,13 @@ class Net(pipeline.Step):
         npt_path.parent.mkdir(parents=True, exist_ok=True)
         return npt_path
 
-    @staticmethod
-    def generate_files(args):
-        if args.pcap_file or args.pcap_dir:
+    def generate_files(self):
+        if self.args.pcap_file or self.args.pcap_dir:
             # stream pair of pcap path & "basis" for reconstructing tree
-            for pcap_file in args.pcap_file:
-                yield (pcap_file, None)
+            for pcap_file in self.args.pcap_file:
+                yield (pathlib.Path(pcap_file), None)
 
-            for pcap_dir in args.pcap_dir:
+            for pcap_dir in self.args.pcap_dir:
                 for pcap_file in pcap_dir.rglob('*.pcap'):
                     yield (pcap_file, pcap_dir)
 
@@ -203,10 +195,10 @@ class Net(pipeline.Step):
 
         yield (None, None)
 
-    def generate_argv(self, args, pcap_file=None, npt_file=None):
+    def generate_argv(self, pcap_file=None, npt_file=None):
         """Construct arguments for `nprint` command."""
         # generate shared/global arguments
-        if args.verbosity >= 3:
+        if self.args.verbosity >= 3:
             yield '--verbose'
 
         # support arbitrary pcap infile(s)
@@ -219,7 +211,7 @@ class Net(pipeline.Step):
                 continue
 
             try:
-                value = getattr(args, action.dest)
+                value = getattr(self.args, action.dest)
             except AttributeError:
                 if action.default == argparse.SUPPRESS:
                     continue
@@ -235,16 +227,42 @@ class Net(pipeline.Step):
                     yield str(value)
 
         # add output path
-        outdir = self.get_output_directory(args)
+        outdir = self.get_output_directory()
         outpath = npt_file or outdir / 'netcap.npt'
         yield from ('--write_file', str(outpath))
 
-    def generate_procs(self, args, pcap_files, outdir):
-        for (pcap_file, dir_basis) in pcap_files:
-            npt_file = self.make_output_path(outdir, pcap_file, dir_basis)
+    def filter_files(self, pcap_files, outdir, labels=None):
+        skipped_files = collections.deque(maxlen=4)
+        skipped_count = 0
 
+        for (pcap_file, dir_basis) in pcap_files:
+            if pcap_file:
+                pcap_output = pcap_file.relative_to(dir_basis) if dir_basis else pcap_file.name
+
+                if labels is not None and str(pcap_output) not in labels.index:
+                    skipped_files.append(pcap_output)
+                    skipped_count += 1
+                    continue
+
+                npt_file = self.make_output_path(outdir, pcap_output)
+
+                yield (pcap_file, npt_file)
+            else:
+                yield (None, None)
+
+        if skipped_count > 0 and self.args.verbosity >= 1:
+            print('Skipped', skipped_count, 'PCAP file(s) missing from labels file:')
+
+            for skipped_file in skipped_files:
+                print(f'\t{skipped_file}')
+
+            if skipped_count > len(skipped_files):
+                print('\t...')
+
+    def generate_procs(self, file_stream):
+        for (pcap_file, npt_file) in file_stream:
             yield nPrintProcess(
-                *self.generate_argv(args, pcap_file, npt_file),
+                *self.generate_argv(pcap_file, npt_file),
             )
 
     @staticmethod
@@ -264,18 +282,23 @@ class Net(pipeline.Step):
 
                     pool[index] = next(proc_stream, None)
 
-    def __call__(self, args, results):
+    def __pre__(self, parser, args, results):
         try:
             warn_version_mismatch()
         except nprint.NoCommand:
-            args.__parser__.error("nprint command could not be found on PATH "
-                                  "(to install see nprint-install)")
+            parser.error("nprint command could not be found on PATH "
+                         "(to install see nprint-install)")
 
-        outdir = self.make_output_directory(args)
+        self.args = args
 
-        pcap_files = self.generate_files(args)
+    def __call__(self, args, results):
+        outdir = self.make_output_directory()
 
-        processes = self.generate_procs(args, pcap_files, outdir)
+        pcap_files = self.generate_files()
+
+        file_stream = self.filter_files(pcap_files, outdir, results.labels)
+
+        processes = self.generate_procs(file_stream)
 
         self.pool_procs(processes, size=args.concurrency)
 
@@ -337,10 +360,10 @@ class FileAccessType:
         return self.modes[self.access]
 
     def __call__(self, path):
-        if os.access(path, self.access):
+        if os.path.isfile(path) and os.access(path, self.access):
             return path
 
-        raise argparse.ArgumentTypeError(f"can't open '{path}' ({self.mode})")
+        raise argparse.ArgumentTypeError(f"can't access '{path}' ({self.mode})")
 
 
 class DirectoryAccessType:

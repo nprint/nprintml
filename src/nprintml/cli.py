@@ -26,6 +26,8 @@ ANIMALS = ('aardvark', 'bison', 'canary', 'dalmation', 'emu', 'falcon', 'gnu',
 
 def execute(argv=None, **parser_kwargs):
     """Execute the nprintml CLI command."""
+    args = None
+
     try:
         parser = build_parser(**parser_kwargs)
 
@@ -35,14 +37,14 @@ def execute(argv=None, **parser_kwargs):
 
         check_output_directory(args)
 
-        for (step, results) in pipeline(args):
+        for (step, results) in pipeline(parser, args):
             print(step, results, sep=' → ')
 
         print('done →', pipeline.results)
     except KeyboardInterrupt:
         print('interrupted ✕')
     except Exception as exc:
-        if args.traceback:
+        if args is not None and args.traceback:
             raise
 
         print(f'error:{exc_repr(exc)} ✕')

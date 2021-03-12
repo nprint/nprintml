@@ -15,19 +15,25 @@ class LabelAggregator(abc.ABC):
     Inheritors of this class are expected to implement the abstract
     method `__call__()` to provide their method of feature aggregation.
 
+    Inheritors *may* extend `__init__()` so as to set instance attribute
+    `labels` to the eagerly-loaded labels, for sharing with other
+    components -- for example to avoid preparing more data than there
+    are labels.
+
     """
-    def __init__(self, npt_csv, label_csv):
-        self.npt_csv = npt_csv
+    def __init__(self, label_csv):
         self.label_csv = label_csv
+        self.labels = None
 
     @abc.abstractmethod
-    def __call__(self, compress=False, sample_size=1):
+    def __call__(self, npt_csv, compress=False, sample_size=1):
         """Abstract method, expected to be implemented on a per-example
         label aggregation method.
 
         """
 
-    def load_npt(self, npt_csv):
+    @staticmethod
+    def load_npt(npt_csv):
         """Load nPrint data.
 
         The index column is expected to *always* be the 0th column.
@@ -35,7 +41,8 @@ class LabelAggregator(abc.ABC):
         """
         return pd.read_csv(npt_csv, index_col=0)
 
-    def load_label(self, labels_csv):
+    @staticmethod
+    def load_label(labels_csv):
         """Load labels, which are expected to be in item, label column
         format where item is the index.
 
@@ -60,7 +67,8 @@ class LabelAggregator(abc.ABC):
 
         return label
 
-    def compress_npt(self, npt):
+    @staticmethod
+    def compress_npt(npt):
         """Compress columns out of an nPrint that provide no predictive
         signal.
 
@@ -72,7 +80,8 @@ class LabelAggregator(abc.ABC):
         cols_to_drop = nunique[nunique == 1].index
         return npt.drop(cols_to_drop, axis=1)
 
-    def attach_label(self, npt, label):
+    @staticmethod
+    def attach_label(npt, label):
         """Attach labels to a dataframe of nPrints, returning the labels
         that are missing, the new dataframe, and the number of samples
         that were lost.
@@ -90,7 +99,8 @@ class LabelAggregator(abc.ABC):
 
         return (npt, missing_labels, samples0, samples1)
 
-    def flatten_columns(self, columns, sample_size):
+    @staticmethod
+    def flatten_columns(columns, sample_size):
         """When we attach labels to more than one nPrint we need to
         create new columns that essentially are the original columns
         multiplied by the number of packets in each flattened sample.

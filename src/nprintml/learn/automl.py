@@ -18,6 +18,9 @@ from sklearn.metrics import (
     roc_curve,
     auc,
     precision_recall_curve,
+    balanced_accuracy_score,
+    roc_auc_score,
+    f1_score,
     average_precision_score,
     confusion_matrix,
     ConfusionMatrixDisplay,
@@ -104,6 +107,7 @@ class AutoML:
         leaderboard = predictor.leaderboard(test_data, silent=True)
         leaderboard.set_index('model').sort_index().to_csv(self.outpath / 'leaderboard.csv')
 
+
     def graph_all(self, predictor, test_data):
         """Generate ROC, PR and confusion matrix graphs for the
         classification tasks.
@@ -122,6 +126,17 @@ class AutoML:
         self.make_pr(binarizer.classes_, binarized_labels, y_proba)
         self.make_roc(binarizer.classes_, binarized_labels, y_proba)
         self.make_cfmx(binarizer.classes_, y_true, y_pred)
+        self.make_stat_report(binarizer.classes_, binarized_labels, y_true, y_pred, y_proba)
+
+    def make_stat_report(self, classes, binarized_labels, y_true, y_pred, y_proba):
+        ba = balanced_accuracy_score(y_true, y_pred)
+        f1_micro = f1_score(y_true, y_pred, average='micro')
+        f1_macro = f1_score(y_true, y_pred, average='macro')
+        roc_macro = roc_auc_score(y_true, y_proba, average='macro', multi_class='ovr')
+
+        with open(self.outpath / 'stat-report.csv', 'w') as f:
+            f.write('f1_micro,f1_macro,balanced_accuracy,roc_macro\n')
+            f.write('{0},{1},{2},{3}\n'.format(f1_micro, f1_macro, ba, roc_macro))
 
     def make_cfmx(self, classes, y_true, y_pred):
         """Make confusion matrix without printing exact values.

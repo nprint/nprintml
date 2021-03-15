@@ -14,7 +14,7 @@ INSTALL_REQUIRES = [
     # autogluon.core *also* requires numpy, so match autogluon
     'numpy == 1.19.5',
 
-    'pandas ~= 1.2.3',
+    'pandas ~= 1.1.5',
 
     'matplotlib ~= 3.3.4',
     'seaborn ~= 0.11.1',

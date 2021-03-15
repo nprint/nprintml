@@ -12,6 +12,7 @@ class LearnResult(typing.NamedTuple):
     """Pipeline Step results for Learn"""
     graphs_path: pathlib.Path
     models_path: pathlib.Path
+    heatmaps_path: pathlib.Path
 
 
 class Learn(pipeline.Step):
@@ -90,6 +91,7 @@ class Learn(pipeline.Step):
         return LearnResult(
             graphs_path=learn.graphs_path,
             models_path=learn.models_path,
+            heatmaps_path=learn.heatmaps_path,
         )
 
 

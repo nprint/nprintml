@@ -11,6 +11,7 @@ import itertools
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+from . import heatmaps
 from autogluon import TabularPrediction as task
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
@@ -38,6 +39,7 @@ class AutoML:
 
     graphs_dirname = 'graphs'
     models_dirname = 'models'
+    heatmaps_dirname = 'heatmaps'
 
     #: Parameter defaults and options
     EVAL_METRIC = 'accuracy'
@@ -76,6 +78,14 @@ class AutoML:
     @property
     def models_path(self):
         return self.outpath / self.models_dirname
+
+    @property
+    def rfmodel_path(self):
+        return self.models_path / f'RandomForestClassifierGini/model.pkl'
+
+    @property
+    def heatmaps_path(self):
+        return self.outpath / self.heatmaps_dirname
 
     def __call__(self, test_size=TEST_SIZE, eval_metric=EVAL_METRIC, quality=QUALITY,
                  time_limits=TIME_LIMITS, n_threads=N_THREADS, verbosity=VERBOSITY):
@@ -122,6 +132,7 @@ class AutoML:
         self.make_pr(binarizer.classes_, binarized_labels, y_proba)
         self.make_roc(binarizer.classes_, binarized_labels, y_proba)
         self.make_cfmx(binarizer.classes_, y_true, y_pred)
+        heatmaps.make_heatmaps(self.rfmodel_path, self.heatmaps_path)
 
     def make_cfmx(self, classes, y_true, y_pred):
         """Make confusion matrix without printing exact values.

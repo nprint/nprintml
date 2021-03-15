@@ -129,14 +129,23 @@ class AutoML:
         self.make_stat_report(binarizer.classes_, binarized_labels, y_true, y_pred, y_proba)
 
     def make_stat_report(self, classes, binarized_labels, y_true, y_pred, y_proba):
+        """Make basic stat report that many users would put in a results summary table
+
+        """
         ba = balanced_accuracy_score(y_true, y_pred)
-        f1_micro = f1_score(y_true, y_pred, average='micro')
         f1_macro = f1_score(y_true, y_pred, average='macro')
-        roc_macro = roc_auc_score(y_true, y_proba, average='macro', multi_class='ovr')
+        f1_micro = f1_score(y_true, y_pred, average='micro')
+        if len(classes) == 2:
+            multi_class='raise'
+        else:
+            multi_class='ovr'
+        roc_macro = roc_auc_score(y_true, y_proba, average='macro', multi_class=multi_class)
+        roc_micro = roc_auc_score(y_true, y_proba, average='micro', multi_class=multi_class)
+        roc_weighted = roc_auc_score(y_true, y_proba, average='weighted', multi_class=multi_class)
 
         with open(self.outpath / 'stat-report.csv', 'w') as f:
-            f.write('f1_micro,f1_macro,balanced_accuracy,roc_macro\n')
-            f.write('{0},{1},{2},{3}\n'.format(f1_micro, f1_macro, ba, roc_macro))
+            f.write('f1_micro,f1_macro,balanced_accuracy,roc_macro,roc_micro\n')
+            f.write(f'{f1_micro:.2f},{f1_macro:.2f},{ba:.2f},{roc_macro:.2f},{roc_micro:.2f},{roc_weighted:.2f}\n')
 
     def make_cfmx(self, classes, y_true, y_pred):
         """Make confusion matrix without printing exact values.

@@ -265,6 +265,13 @@ class Net(pipeline.Step):
                 *self.generate_argv(pcap_file, npt_file),
             )
 
+    def output_nprint_config(self, outdir):
+        args = ' '.join(list(self.generate_argv())[:-2])
+        nprint_cmd = f'nprint {args}\n'
+        outfile = outdir / 'nprint.cfg'
+        with open(outfile, 'w') as f:
+            f.write(nprint_cmd)
+
     @staticmethod
     def pool_procs(proc_stream, size, wait=None):
         sleep_time = os.sched_rr_get_interval(0) if wait is None else wait / 1_000
@@ -293,6 +300,8 @@ class Net(pipeline.Step):
 
     def __call__(self, args, results):
         outdir = self.make_output_directory()
+        
+        self.output_nprint_config(outdir)
 
         pcap_files = self.generate_files()
 

@@ -477,7 +477,14 @@ def make_heatmaps(model_path, out_path):
         d = ob.get_model_feature_importance()
         
     for key, val in d.items():
-        header, field, bit = key.split('_')
+        length = len(key.split('_'))
+
+        if length == 5:
+            pkt, probenum, header, field, bit = key.split('_')
+        elif length == 3:
+            header, field, bit = key.split('_')
+        else:
+            continue
 
         if header == 'ipv4':
             headkey = header + "_" + field

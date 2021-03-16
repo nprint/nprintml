@@ -7,30 +7,28 @@ from setuptools import find_packages, setup
 README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
-    'argparse-formatter == 1.2',
+    'argparse-formatter ~= 1.4',
 
-    'numpy ~= 1.19.4',
-    'pandas ~= 1.1.4',
+    'autogluon.tabular ~= 0.1.0',
 
-    # for cuda, e.g.: mxnet_cu101 < 2.0.0
-    'mxnet < 2.0.0',
+    # autogluon.core *also* requires numpy, so match autogluon
+    'numpy == 1.19.5',
 
-    'autogluon ~= 0.0.15',
-    'scikit-learn ~= 0.23.2',
+    'pandas ~= 1.1.5',
 
-    'matplotlib ~= 3.3.3',
-    'seaborn ~= 0.11.0',
+    'matplotlib ~= 3.3.4',
+    'seaborn ~= 0.11.1',
 ]
 
 _DEV_REQUIRES = [
     'argcmdr==0.7.0',
     'bumpversion==0.6.0',
-    'twine==3.2.0',
-    'wheel==0.35.1',
+    'twine==3.4.0',
+    'wheel==0.36.2',
 ]
 
 _TESTS_REQUIRE = [
-    'tox==3.20.1',
+    'tox==3.23.0',
 ]
 
 EXTRAS_REQUIRE = {

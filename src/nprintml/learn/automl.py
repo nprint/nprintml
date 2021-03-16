@@ -11,7 +11,7 @@ import itertools
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-from autogluon import TabularPrediction as task
+from autogluon.tabular import TabularPredictor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import (
@@ -60,11 +60,9 @@ class AutoML:
         'best_quality',
     )
 
-    N_THREADS = None
-
     TEST_SIZE = 0.3
 
-    TIME_LIMITS = 5 * 60
+    TIME_LIMIT = 5 * 60
 
     VERBOSITY = 1
 
@@ -81,26 +79,30 @@ class AutoML:
         return self.outpath / self.models_dirname
 
     def __call__(self, test_size=TEST_SIZE, eval_metric=EVAL_METRIC, quality=QUALITY,
-                 time_limits=TIME_LIMITS, n_threads=N_THREADS, verbosity=VERBOSITY):
+                 time_limit=TIME_LIMIT, verbosity=VERBOSITY):
         """Train, test, and evaluate models."""
         (train_data, test_data) = train_test_split(self.data, test_size=test_size)
-        predictor = self.train(train_data, eval_metric, quality, time_limits,
-                               n_threads, verbosity=verbosity)
+        predictor = self.train(train_data, eval_metric, quality, time_limit,
+                               verbosity=verbosity)
         self.test(predictor, test_data)
         self.graph_all(predictor, test_data)
 
     def train(self, train_data, eval_metric=EVAL_METRIC, quality=QUALITY,
-              time_limits=TIME_LIMITS, n_threads=N_THREADS, verbosity=VERBOSITY):
+              time_limit=TIME_LIMIT, verbosity=VERBOSITY):
         """Train prospective models."""
         # predictor gives us default access to the *best* predictor that
         # was trained on the task (otherwise we're just wrapping AutoGluon)
-        return task.fit(train_data=train_data, label='label',
-                        eval_metric=eval_metric,
-                        output_directory=self.outpath,
-                        time_limits=time_limits,
-                        presets=self.QUALITY_PRESETS[quality],
-                        nthreads_per_trial=n_threads,
-                        verbosity=verbosity)
+        task = TabularPredictor(
+            label='label',
+            eval_metric=eval_metric,
+            path=self.outpath,
+            verbosity=verbosity,
+        )
+        return task.fit(
+            train_data=train_data,
+            time_limit=time_limit,
+            presets=self.QUALITY_PRESETS[quality],
+        )
 
     def test(self, predictor, test_data):
         """Evaluate models on the test set and write the results to file."""
@@ -122,7 +124,7 @@ class AutoML:
         binarized_labels = binarizer.transform(y_true)
 
         y_pred = predictor.predict(test_no_label)
-        y_proba = predictor.predict_proba(test_no_label)
+        y_proba = predictor.predict_proba(test_no_label, as_multiclass=False)
         self.make_pr(binarizer.classes_, binarized_labels, y_proba)
         self.make_roc(binarizer.classes_, binarized_labels, y_proba)
         self.make_cfmx(binarizer.classes_, y_true, y_pred)

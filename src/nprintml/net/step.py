@@ -231,6 +231,13 @@ class Net(pipeline.Step):
         outpath = npt_file or outdir / 'netcap.npt'
         yield from ('--write_file', str(outpath))
 
+    def output_nprint_config(self):
+        args = ' '.join(list(self.generate_argv())[:-2])
+        nprint_cmd = f'nprint {args} -P [input_pcap]\n'
+        outfile = self.args.outdir / 'nprint.cfg'
+        with open(outfile, 'w') as f:
+            f.write(nprint_cmd)
+
     def filter_files(self, pcap_files, outdir, labels=None):
         skipped_files = collections.deque(maxlen=4)
         skipped_count = 0
@@ -292,6 +299,8 @@ class Net(pipeline.Step):
         self.args = args
 
     def __call__(self, args, results):
+        self.output_nprint_config()
+
         outdir = self.make_output_directory()
         
         pcap_files = self.generate_files()

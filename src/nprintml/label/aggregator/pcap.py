@@ -2,7 +2,7 @@ import pathlib
 
 import pandas as pd
 
-from . import LabelAggregator
+from . import LabelAggregator, AggregationLengthError, AggregationPathError
 
 
 class PcapLabelAggregator(LabelAggregator):
@@ -11,31 +11,64 @@ class PcapLabelAggregator(LabelAggregator):
     size, to run autoML on the generated samples.
 
     """
+    @classmethod
+    def normalize_npt(cls, npt_csv, path_input_base=None):
+        if isinstance(npt_csv, str):
+            yield from cls.normalize_npt(pathlib.Path(npt_csv))
+            return
+
+        if isinstance(npt_csv, pathlib.Path):
+            base_path = path_input_base or npt_csv
+            file_count = 0
+            for (file_count, npt_file) in enumerate(npt_csv.rglob('*'), 1):
+                if npt_file.is_file():
+                    index = str(npt_file.relative_to(base_path).with_suffix(''))
+                    yield (index, npt_file)
+
+            if file_count == 0:
+                raise AggregationPathError(
+                    f"{cls.__name__} requires at least one nPrint "
+                    f"data file but directory is empty: '{npt_csv}'"
+                )
+
+            return
+
+        # treat as file object stream
+        file_count = 0
+        for (file_count, npt_file) in enumerate(npt_csv, 1):
+            file_path = pathlib.Path(npt_file.name)
+            if path_input_base:
+                file_path = file_path.relative_to(path_input_base)
+            index = str(file_path.with_suffix(''))
+            yield (index, npt_file)
+
+        if file_count == 0:
+            raise AggregationLengthError(
+                f"{cls.__name__} requires at least one nPrint "
+                f"data result but stream was empty: {npt_csv}"
+            )
+
     def __init__(self, label_csv):
         super().__init__(label_csv)
         self.labels = self.load_label(label_csv)
 
-    def __call__(self, npt_csv, compress=False, sample_size=1):
-        """Enumerate given directory of nPrint data, load, pad to their
-        maximum size, and attach labels.
+    def __call__(self, npt_csv, path_input_base=None, compress=False, sample_size=1):
+        """Enumerate given stream or directory of nPrint data, load,
+        pad to their maximum size, and attach labels.
+
+        `npt_csv` may specify either a path to a directory of nPrint
+        results (`str` or `pathlib.Path`) OR a stream of open file-like
+        objects (exposing both `read()` and `name`).
+
+        `path_input_base` is recommended when `npt_csv` specifies a
+        stream of file objects, to indicate their common base path (even
+        if this is virtual), such that they may be matched with the
+        label index.
 
         """
-        if isinstance(npt_csv, str):
-            npt_csv = pathlib.Path(npt_csv)
+        indexed_files = self.normalize_npt(npt_csv, path_input_base)
 
-        if not isinstance(npt_csv, pathlib.Path):
-            raise TypeError(
-                f"{self.__class__.__name__} expects a path to a directory of nPrint "
-                f"data file(s) not {npt_csv.__class__.__name__}: '{npt_csv}'"
-            )
-
-        if not any(npt_csv.iterdir()):
-            raise FileNotFoundError(
-                f"{self.__class__.__name__} requires at least one nPrint "
-                f"data file but directory is empty: '{npt_csv}'"
-            )
-
-        npts = self.merge_npt(npt_csv)
+        npts = self.merge_npt(indexed_files)
 
         if compress:
             print('Compressing nPrint')
@@ -58,7 +91,7 @@ class PcapLabelAggregator(LabelAggregator):
         index = self.labels.index.str.replace(r'\.pcap$', '', case=False)
         return self.labels.set_axis(index)
 
-    def merge_npt(self, npt_csv):
+    def merge_npt(self, indexed_files):
         """Merge nPrint data from multiple output files."""
         print('Loading nPrints')
 
@@ -66,16 +99,15 @@ class PcapLabelAggregator(LabelAggregator):
         npt_paths = []
         largest_npt = None
         file_count = 0
-        npt_files = (npt_file for npt_file in npt_csv.rglob('*') if npt_file.is_file())
 
-        for (file_count, npt_file) in enumerate(npt_files, 1):
+        for (file_count, (index, npt_file)) in enumerate(indexed_files, 1):
             npt = self.load_npt(npt_file)
 
             if largest_npt is None or npt.shape[0] > largest_npt.shape[0]:
                 largest_npt = npt
 
             npts0.append(npt)
-            npt_paths.append(str(npt_file.relative_to(npt_csv).with_suffix('')))
+            npt_paths.append(index)
 
         print('Loaded', file_count, 'nprints')
 

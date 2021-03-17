@@ -15,7 +15,13 @@ A lazy-loading `registry` of these classes is provided for their dynamic
 inspection and retrieval.
 
 """
-from .base import LabelAggregator, LabelError, PluginRegistry  # noqa: F401
+from .base import (  # noqa: F401
+    AggregationLengthError,
+    AggregationPathError,
+    LabelAggregator,
+    LabelError,
+    PluginRegistry,
+)
 
 
 registry = PluginRegistry(LabelAggregator,

@@ -30,7 +30,7 @@ class Label(pipeline.Step):
     """
     __pre_provides__ = ('labels',)
     __provides__ = LabelResult
-    __requires__ = ('nprint_path',)
+    __requires__ = ('nprint_path', 'nprint_stream')
 
     def __init__(self, parser):
         group_parser = parser.add_argument_group(
@@ -68,10 +68,9 @@ class Label(pipeline.Step):
             help="drop columns which do not appear to provide any predictive signal",
         )
         group_parser.add_argument(
-            '--no-write-features',
+            '--no-save-features',
             action='store_false',
-            default=True,
-            dest='write_features',
+            dest='save_features',
             help="disable writing of features to disk (enabled by default for inspection & reuse)",
         )
 
@@ -85,12 +84,13 @@ class Label(pipeline.Step):
 
     def __call__(self, args, results):
         features = self.aggregator(
-            results.nprint_path,
+            results.nprint_stream,
+            path_input_base=results.nprint_path,
             compress=args.compress,
             sample_size=args.sample_size,
         )
 
-        if args.write_features:
+        if args.save_features:
             outdir = args.outdir / 'feature'
             outdir.mkdir()
 

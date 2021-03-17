@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from . import LabelAggregator
+from . import LabelAggregator, AggregationLengthError, AggregationPathError
 
 
 class IndexLabelAggregator(LabelAggregator):
@@ -14,25 +14,51 @@ class IndexLabelAggregator(LabelAggregator):
     label.
 
     """
-    def __call__(self, npt_csv, compress=False, sample_size=1):
-        """Generates index driven features by loading nPrints and
-        attaching labels, grouping by a given sample size if desired.
+    @classmethod
+    def normalize_npt(cls, npt_csv):
+        if isinstance(npt_csv, str):
+            return cls.normalize_npt(pathlib.Path(npt_csv))
+
+        if isinstance(npt_csv, pathlib.Path):
+            if npt_csv.is_dir():
+                try:
+                    (npt_csv,) = npt_csv.iterdir()
+                except ValueError:
+                    raise AggregationPathError(
+                        f"{cls.__name__} expects exactly one nPrint data file but "
+                        f"specified directory contains none or more than one: '{npt_csv}'"
+                    )
+
+            return npt_csv
+
+        # treat as stream
+        try:
+            (npt_csv,) = npt_csv
+        except ValueError:
+            raise AggregationLengthError(
+                f"{cls.__name__} expects exactly one nPrint data result but "
+                f"specified stream contains none or more than one: {npt_csv}"
+            )
+        else:
+            return npt_csv
+
+    def __call__(self, npt_csv, path_input_base=None, compress=False, sample_size=1):
+        """Generate index driven features by loading an nPrint result
+        and attaching labels, grouping by a given sample size if
+        desired.
+
+        `npt_csv` may specify either a path to an nPrint result (`str`
+        or `pathlib.Path`) OR a stream containing an open file-like
+        object (exposing both `read()` and `name`).
+
+        (If a path, `npt_csv` may specify a directory, so long as the
+        directory contains only one nPrint result file.)
 
         """
-        if isinstance(npt_csv, str):
-            npt_csv = pathlib.Path(npt_csv)
+        npt_input = self.normalize_npt(npt_csv)
 
-        if isinstance(npt_csv, pathlib.Path) and npt_csv.is_dir():
-            try:
-                (npt_csv,) = npt_csv.iterdir()
-            except ValueError:
-                raise OSError(
-                    f"{self.__class__.__name__} expects exactly one nPrint data file "
-                    f"but specified directory contains none or more than one: '{npt_csv}'"
-                )
-
-        print('Loading nPrint:', self.filerepr(npt_csv))
-        npt = self.load_npt(npt_csv)
+        print('Loading nPrint:', self.filerepr(npt_input))
+        npt = self.load_npt(npt_input)
 
         print('Loaded 1 nprint')
         print('  nPrint shape:', npt.shape)

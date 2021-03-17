@@ -26,9 +26,26 @@ class LabelAggregator(abc.ABC):
         self.labels = None
 
     @abc.abstractmethod
-    def __call__(self, npt_csv, compress=False, sample_size=1):
+    def __call__(self, npt_csv, path_input_base=None, compress=False, sample_size=1):
         """Abstract method, expected to be implemented on a per-example
         label aggregation method.
+
+        `npt_csv` may specify either a path to a directory of nPrint
+        results (`str` or `pathlib.Path`) OR a stream of open file-like
+        objects (exposing both `read()` and `name`).
+
+        `path_input_base` provides a hint for matching input files to
+        their label index, and is of primary importance to aggregators
+        whose input may be multiple files. When `npt_csv` specifies a
+        path, then that path should be sufficient for this "hint", and
+        `path_input_base` may be omitted -- each input file's label
+        index key is assumed to be the file's path relative to the value
+        of `npt_csv`. However, when `npt_csv` specifies an in-memory
+        stream of file objects, their common provenance (if any) is
+        unknown; in this case, `path_input_base` may be specified to
+        fill in for the `npt_csv` path, to indicate what common path
+        prefix/base must be removed from file objects' names in order
+        to match them with labels.
 
         """
 
@@ -114,10 +131,28 @@ class LabelAggregator(abc.ABC):
 
     @staticmethod
     def filerepr(fd):
-        return fd.name if isinstance(fd, io.TextIOWrapper) else str(fd)
+        if isinstance(fd, io.TextIOBase):
+            try:
+                return fd.name
+            except AttributeError:
+                pass
+
+        return str(fd)
 
 
 class LabelError(Exception):
+    pass
+
+
+class AggregationError(Exception):
+    pass
+
+
+class AggregationPathError(AggregationError, OSError):
+    pass
+
+
+class AggregationLengthError(AggregationError, ValueError):
     pass
 
 

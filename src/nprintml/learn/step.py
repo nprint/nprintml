@@ -60,19 +60,12 @@ class Learn(pipeline.Step):
         )
         group_parser.add_argument(
             '--limit',
-            default=AutoML.TIME_LIMITS,
-            dest='time_limits',
+            default=AutoML.TIME_LIMIT,
+            dest='time_limit',
             metavar='INTEGER',
             type=int,
             help="maximum time (seconds) over which to train each model "
-                 f"(default: {AutoML.TIME_LIMITS})",
-        )
-        group_parser.add_argument(
-            '--threads',
-            dest='n_threads',
-            metavar='INTEGER',
-            type=NumericRangeType(int, (0, None)),
-            help="number of CPU threads to dedicate to training (default: same as --concurrency)",
+                 f"(default: {AutoML.TIME_LIMIT})",
         )
 
     def __call__(self, args, results):
@@ -82,8 +75,7 @@ class Learn(pipeline.Step):
             test_size=args.test_size,
             eval_metric=args.eval_metric,
             quality=args.quality,
-            time_limits=args.time_limits,
-            n_threads=(args.n_threads or args.concurrency),
+            time_limit=args.time_limit,
             verbosity=args.verbosity,
         )
 

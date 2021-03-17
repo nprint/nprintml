@@ -128,26 +128,6 @@ class AutoML:
         self.make_pr(binarizer.classes_, binarized_labels, y_proba)
         self.make_roc(binarizer.classes_, binarized_labels, y_proba)
         self.make_cfmx(binarizer.classes_, y_true, y_pred)
-        self.make_stat_report(binarizer.classes_, binarized_labels, y_true, y_pred, y_proba)
-
-    def make_stat_report(self, classes, binarized_labels, y_true, y_pred, y_proba):
-        """Make basic stat report that many users would put in a results summary table
-
-        """
-        ba = balanced_accuracy_score(y_true, y_pred)
-        f1_macro = f1_score(y_true, y_pred, average='macro')
-        f1_micro = f1_score(y_true, y_pred, average='micro')
-        if len(classes) == 2:
-            multi_class='raise'
-        else:
-            multi_class='ovr'
-        roc_macro = roc_auc_score(y_true, y_proba, average='macro', multi_class=multi_class)
-        roc_micro = roc_auc_score(y_true, y_proba, average='micro', multi_class=multi_class)
-        roc_weighted = roc_auc_score(y_true, y_proba, average='weighted', multi_class=multi_class)
-
-        with open(self.outpath / 'stat-report.csv', 'w') as f:
-            f.write('f1_micro,f1_macro,balanced_accuracy,roc_macro,roc_micro\n')
-            f.write(f'{f1_micro:.2f},{f1_macro:.2f},{ba:.2f},{roc_macro:.2f},{roc_micro:.2f},{roc_weighted:.2f}\n')
 
     def make_cfmx(self, classes, y_true, y_pred):
         """Make confusion matrix without printing exact values.
@@ -176,7 +156,7 @@ class AutoML:
             plt_ax = self._make_binary_pr(y_true_bin.ravel(), y_proba.ravel())
         else:
             for i, class_label in enumerate(classes):
-                plt_ax = self._make_binary_pr(y_true_bin[:, i], y_proba[:, i],
+                plt_ax = self._make_binary_pr(y_true_bin[:, i], y_proba.iloc[:, i],
                                               class_label=class_label)
 
         # Split up the line styles to make them unique
@@ -214,7 +194,7 @@ class AutoML:
             plt_ax = self._make_binary_roc(y_true_bin.ravel(), y_proba.ravel())
         else:
             for i, class_label in enumerate(classes):
-                plt_ax = self._make_binary_roc(y_true_bin[:, i], y_proba[:, i],
+                plt_ax = self._make_binary_roc(y_true_bin[:, i], y_proba.iloc[:, i],
                                                class_label=class_label)
 
         # Split up the line styles to make them unique

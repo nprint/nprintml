@@ -1,6 +1,7 @@
 """Pipeline Step to extract networking traffic via nPrint: Net"""
 import argparse
 import collections
+import concurrent.futures
 import itertools
 import os
 import pathlib
@@ -12,14 +13,22 @@ import typing
 
 import nprintml
 from nprintml import pipeline
-from nprintml.util import HelpAction
+from nprintml.util import (
+    HelpAction,
+    NamedBytesIO,
+    prime_iterator,
+)
 
-from .execute import CommandError, nprint, nPrintProcess
+from . import execute
+
+
+NPRINT_QUEUE_MAX = 10 ** 6
 
 
 class NetResult(typing.NamedTuple):
     """Pipeline Step results for Net"""
     nprint_path: pathlib.Path
+    nprint_stream: typing.Generator[NamedBytesIO, None, None]
 
 
 class Net(pipeline.Step):
@@ -33,13 +42,16 @@ class Net(pipeline.Step):
     __requires__ = ('labels',)
 
     def __init__(self, parser):
-        self.args = None
+        self.args = None  # set by __pre__
 
         self.group_parser = parser.add_argument_group(
             "extraction of features from network traffic via nPrint",
 
             "(full information can be found at https://nprint.github.io/nprint/)"
         )
+
+        # record of subset of arguments NOT passed to nprint
+        self.own_arguments = set()
 
         self.group_parser.add_argument(
             '-4', '--ipv4',
@@ -127,6 +139,7 @@ class Net(pipeline.Step):
             type=FileAccessType(os.R_OK),
             help="pcap infile",
         )
+        self.own_arguments.add('pcap_file')
         self.group_parser.add_argument(
             '--pcap-dir', '--pcap_dir',
             default=(),
@@ -135,6 +148,7 @@ class Net(pipeline.Step):
             type=DirectoryAccessType(ext='.pcap'),
             help="directory containing pcap infile(s) with file extension '.pcap'",
         )
+        self.own_arguments.add('pcap_dir')
         self.group_parser.add_argument(
             '-R', '--relative-timestamps', '--relative_timestamps',
             action='store_true',
@@ -159,29 +173,41 @@ class Net(pipeline.Step):
         self.group_parser.add_argument(
             '--help-nprint-filter', '--nprint-filter-help', '--nprint_filter_help',
             action=HelpAction,
-            help_action=lambda *_parser_args: nprint('--nprint_filter_help'),
+            help_action=lambda *_parser_args: execute.nprint('--nprint_filter_help'),
             help="describe regex possibilities and exit",
         )
 
-    def get_output_directory(self):
+        self.group_parser.add_argument(
+            '--save-nprint',
+            action='store_true',
+            help="save nPrint output(s) to disk (default: not saved)",
+        )
+        self.own_arguments.add('save_nprint')
+
+    @property
+    def output_directory(self):
         return self.args.outdir / 'nprint'
 
+    @property
+    def default_output(self):
+        return self.output_directory / 'netcap.npt'
+
     def make_output_directory(self):
-        outdir = self.get_output_directory()
-        outdir.mkdir()
-        return outdir
+        if self.args.save_nprint:
+            self.output_directory.mkdir()
 
-    @staticmethod
-    def make_output_path(outdir, pcap_output):
-        npt_path = (outdir / pcap_output).with_suffix('.npt')
+    def make_output_path(self, pcap_output):
+        npt_path = (self.output_directory / pcap_output).with_suffix('.npt')
 
-        if npt_path.exists():
-            raise FileExistsError(None, 'nPrint output path collision', str(npt_path))
+        if self.args.save_nprint:
+            if npt_path.exists():
+                raise FileExistsError(None, 'nPrint output path collision', str(npt_path))
 
-        npt_path.parent.mkdir(parents=True, exist_ok=True)
+            npt_path.parent.mkdir(parents=True, exist_ok=True)
+
         return npt_path
 
-    def generate_files(self):
+    def generate_pcaps(self):
         if self.args.pcap_file or self.args.pcap_dir:
             # stream pair of pcap path & "basis" for reconstructing tree
             for pcap_file in self.args.pcap_file:
@@ -207,7 +233,7 @@ class Net(pipeline.Step):
 
         # add group (nPrint-specific) arguments
         for action in self.group_parser._group_actions:
-            if action.dest in ('pcap_file', 'pcap_dir'):
+            if action.dest in self.own_arguments:
                 continue
 
             try:
@@ -227,16 +253,15 @@ class Net(pipeline.Step):
                     yield str(value)
 
         # add output path
-        outdir = self.get_output_directory()
-        outpath = npt_file or outdir / 'netcap.npt'
-        yield from ('--write_file', str(outpath))
+        if npt_file:
+            yield from ('--write_file', npt_file)
 
     def write_nprint_config(self):
         outfile = self.args.outdir / 'nprint.cfg'
         args = ' '.join(self.generate_argv('[input_pcap]'))
         outfile.write_text(f'nprint {args}\n')
 
-    def filter_files(self, pcap_files, outdir, labels=None):
+    def filter_pcaps(self, pcap_files, labels=None):
         skipped_files = collections.deque(maxlen=4)
         skipped_count = 0
 
@@ -249,7 +274,7 @@ class Net(pipeline.Step):
                     skipped_count += 1
                     continue
 
-                npt_file = self.make_output_path(outdir, pcap_output)
+                npt_file = self.make_output_path(pcap_output)
 
                 yield (pcap_file, npt_file)
             else:
@@ -264,33 +289,68 @@ class Net(pipeline.Step):
             if skipped_count > len(skipped_files):
                 print('\t...')
 
-    def generate_procs(self, file_stream):
-        for (pcap_file, npt_file) in file_stream:
-            yield nPrintProcess(
-                *self.generate_argv(pcap_file, npt_file),
-            )
+    def execute_nprint(self, pcap_file, npt_file):
+        result = execute.nprint(
+            *self.generate_argv(pcap_file),
+            stdout=execute.nprint.PIPE,
+        )
 
-    @staticmethod
-    def pool_procs(proc_stream, size, wait=None):
-        sleep_time = os.sched_rr_get_interval(0) if wait is None else wait / 1_000
+        out_file = npt_file or self.default_output
 
-        pool = list(itertools.islice(proc_stream, size))
+        if self.args.save_nprint:
+            with open(out_file, 'wb') as npt_fd:
+                npt_fd.write(result.stdout)
 
-        while any(pool):
-            if sleep_time != 0:
-                time.sleep(sleep_time)
+        return NamedBytesIO(result.stdout, name=out_file)
 
-            for (index, proc) in enumerate(pool):
-                if proc and proc.poll() is not None:
-                    if proc.returncode != 0:
-                        raise CommandError
+    def generate_npts(self, file_stream, timing):
+        # Spawn thread pool of same size as number of concurrent
+        # subprocesses we would like to maintain.
+        with timing, concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.args.concurrency,
+            thread_name_prefix=__name__,
+        ) as executor:
+            # Enqueue/schedule at most NPRINT_QUEUE_MAX nprint calls
+            # (not all up front, in case this is VERY large, to spare RAM).
+            futures = {
+                executor.submit(self.execute_nprint, *args)
+                for args in itertools.islice(file_stream, NPRINT_QUEUE_MAX)
+            }
 
-                    pool[index] = next(proc_stream, None)
+            if self.args.verbosity >= 3:
+                print('Enqueued', len(futures), 'nPrint task(s)',
+                      'to be processed by at most', self.args.concurrency, 'worker(s)')
+
+            while futures:
+                # Wait only long enough for at least one call to complete.
+                (completed, futures) = concurrent.futures.wait(
+                    futures,
+                    return_when=concurrent.futures.FIRST_COMPLETED,
+                )
+
+                futures_added = 0
+
+                for future in completed:
+                    # Top off the queue with at most one remaining call
+                    # for each completed call.
+                    for (futures_added, args) in enumerate(itertools.islice(file_stream, 1),
+                                                           futures_added + 1):
+                        futures.add(executor.submit(self.execute_nprint, *args))
+
+                    # Share the result.
+                    try:
+                        yield future.result()
+                    except execute.nprint.CommandError:
+                        # TODO
+                        pass
+
+                if futures_added and self.args.verbosity >= 3:
+                    print('Enqueued', futures_added, 'more nPrint task(s)')
 
     def __pre__(self, parser, args, results):
         try:
             warn_version_mismatch()
-        except nprint.NoCommand:
+        except execute.nprint.NoCommand:
             parser.error("nprint command could not be found on PATH "
                          "(to install see nprint-install)")
 
@@ -299,22 +359,29 @@ class Net(pipeline.Step):
     def __call__(self, args, results):
         self.write_nprint_config()
 
-        outdir = self.make_output_directory()
+        self.make_output_directory()
 
-        pcap_files = self.generate_files()
+        pcap_files = self.generate_pcaps()
 
-        file_stream = self.filter_files(pcap_files, outdir, results.labels)
+        file_stream = self.filter_pcaps(pcap_files, results.labels)
 
-        processes = self.generate_procs(file_stream)
+        # Time stream specially as it continues even after step formally completed:
+        stream_timing = results.__timing_steps__[self.generate_npts] = pipeline.Timing()
 
-        self.pool_procs(processes, size=args.concurrency)
+        npt_stream = self.generate_npts(file_stream, stream_timing)
 
-        return NetResult(outdir)
+        # Initialize results generator eagerly; (it will handle own buffer):
+        active_stream = prime_iterator(npt_stream)
+
+        return NetResult(
+            nprint_path=self.output_directory,
+            nprint_stream=active_stream,
+        )
 
 
 def warn_version_mismatch():
     """Warn if nPrint intended version doesn't match what's on PATH."""
-    version_result = nprint('--version', stdout=nprint.PIPE)
+    version_result = execute.nprint('--version', stdout=execute.nprint.PIPE)
     version_output = version_result.stdout.decode()
     version_match = re.match(r'nprint ([.\d]+)', version_output)
     if version_match:

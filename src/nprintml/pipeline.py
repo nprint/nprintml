@@ -348,6 +348,7 @@ class Pipeline(list):
         self.results = self.results_class() if results is None else results
 
         self.results.__timing__ = Timing()
+        self.results.__timing_steps__ = {}
 
         with self.results.__timing__:
             # pre-pipline
@@ -362,7 +363,11 @@ class Pipeline(list):
                 if not results_available.issuperset(step.__requires__):
                     raise StepRequirementError(run, self, results_available)
 
-                step_results = step(args, self.results)
+                step_timing = self.results.__timing_steps__[step] = Timing()
+
+                with step_timing:
+                    step_results = step(args, self.results)
+
                 if step_results is not None:
                     self.merge(step_results)
 

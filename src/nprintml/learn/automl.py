@@ -7,6 +7,7 @@ Graphs may be constructed (with sane defaults) to visually illustrate
 classifier performance.
 
 """
+import csv
 import itertools
 
 import matplotlib.pyplot as plt
@@ -125,6 +126,22 @@ class AutoML:
         self.make_pr(binarizer.classes_, binarized_labels, y_proba)
         self.make_roc(binarizer.classes_, binarized_labels, y_proba)
         self.make_cfmx(binarizer.classes_, y_true, y_pred)
+        self.make_stat_report(binarizer.classes_, binarized_labels, y_true, y_pred, y_proba)
+
+    def make_stat_report(self, classes, binarized_labels, y_true, y_pred, y_proba):
+        """Write report of basic statistics that users might put into a results summary table."""
+        ba = balanced_accuracy_score(y_true, y_pred)
+        f1_macro = f1_score(y_true, y_pred, average='macro')
+        f1_micro = f1_score(y_true, y_pred, average='micro')
+        multi_class = 'raise' if len(classes) == 2 else 'ovr'
+        roc_macro = roc_auc_score(y_true, y_proba, average='macro', multi_class=multi_class)
+        roc_weighted = roc_auc_score(y_true, y_proba, average='weighted', multi_class=multi_class)
+
+        stats_path = self.outpath / 'stat-report.csv'
+        with stats_path.open('w') as fd:
+            writer = csv.writer(fd)
+            writer.writerow(('f1_micro', 'f1_macro', 'balanced_accuracy', 'roc_macro', 'roc_weighted'))
+            writer.writerow(f'{value:.2f}' for value in (f1_micro, f1_macro, ba, roc_macro, roc_weighted))
 
     def make_cfmx(self, classes, y_true, y_pred):
         """Make confusion matrix without printing exact values.

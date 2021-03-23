@@ -7,6 +7,7 @@ Graphs may be constructed (with sane defaults) to visually illustrate
 classifier performance.
 
 """
+import csv
 import itertools
 
 import matplotlib.pyplot as plt

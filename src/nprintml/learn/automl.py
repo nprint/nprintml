@@ -129,9 +129,7 @@ class AutoML:
         self.make_stat_report(binarizer.classes_, binarized_labels, y_true, y_pred, y_proba)
 
     def make_stat_report(self, classes, binarized_labels, y_true, y_pred, y_proba):
-        """Make basic stat report that many users would put in a results summary table
-
-        """
+        """Write report of basic statistics that users might put into a results summary table."""
         ba = balanced_accuracy_score(y_true, y_pred)
         f1_macro = f1_score(y_true, y_pred, average='macro')
         f1_micro = f1_score(y_true, y_pred, average='micro')

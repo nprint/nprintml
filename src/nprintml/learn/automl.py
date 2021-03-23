@@ -133,10 +133,7 @@ class AutoML:
         ba = balanced_accuracy_score(y_true, y_pred)
         f1_macro = f1_score(y_true, y_pred, average='macro')
         f1_micro = f1_score(y_true, y_pred, average='micro')
-        if len(classes) == 2:
-            multi_class='raise'
-        else:
-            multi_class='ovr'
+        multi_class = 'raise' if len(classes) == 2 else 'ovr'
         roc_macro = roc_auc_score(y_true, y_proba, average='macro', multi_class=multi_class)
         roc_weighted = roc_auc_score(y_true, y_proba, average='weighted', multi_class=multi_class)
 

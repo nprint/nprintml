@@ -293,7 +293,7 @@ class Net(pipeline.Step):
 
     def __call__(self, args, results):
         outdir = self.make_output_directory()
-        
+
         pcap_files = self.generate_files()
 
         file_stream = self.filter_files(pcap_files, outdir, results.labels)

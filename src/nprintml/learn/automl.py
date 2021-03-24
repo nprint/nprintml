@@ -16,12 +16,15 @@ from autogluon.tabular import TabularPredictor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import (
-    roc_curve,
     auc,
-    precision_recall_curve,
     average_precision_score,
+    balanced_accuracy_score,
     confusion_matrix,
     ConfusionMatrixDisplay,
+    f1_score,
+    precision_recall_curve,
+    roc_auc_score,
+    roc_curve,
 )
 
 
@@ -107,7 +110,6 @@ class AutoML:
         leaderboard = predictor.leaderboard(test_data, silent=True)
         leaderboard.set_index('model').sort_index().to_csv(self.outpath / 'leaderboard.csv')
 
-
     def graph_all(self, predictor, test_data):
         """Generate ROC, PR and confusion matrix graphs for the
         classification tasks.
@@ -140,8 +142,10 @@ class AutoML:
         stats_path = self.outpath / 'stat-report.csv'
         with stats_path.open('w') as fd:
             writer = csv.writer(fd)
-            writer.writerow(('f1_micro', 'f1_macro', 'balanced_accuracy', 'roc_macro', 'roc_weighted'))
-            writer.writerow(f'{value:.2f}' for value in (f1_micro, f1_macro, ba, roc_macro, roc_weighted))
+            writer.writerow(('f1_micro', 'f1_macro', 'balanced_accuracy',
+                             'roc_macro', 'roc_weighted'))
+            writer.writerow(f'{value:.2f}' for value in (f1_micro, f1_macro, ba,
+                                                         roc_macro, roc_weighted))
 
     def make_cfmx(self, classes, y_true, y_pred):
         """Make confusion matrix without printing exact values.

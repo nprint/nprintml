@@ -321,6 +321,9 @@ class Net(pipeline.Step):
                 print('Enqueued', len(futures), 'nPrint task(s)',
                       'to be processed by at most', self.args.concurrency, 'worker(s)')
 
+            all_done = False
+            failure_count = 0
+
             while futures:
                 # Wait only long enough for at least one call to complete.
                 (completed, futures) = concurrent.futures.wait(
@@ -328,24 +331,32 @@ class Net(pipeline.Step):
                     return_when=concurrent.futures.FIRST_COMPLETED,
                 )
 
-                futures_added = 0
+                added_count = 0
 
                 for future in completed:
                     # Top off the queue with at most one remaining call
                     # for each completed call.
-                    for (futures_added, args) in enumerate(itertools.islice(file_stream, 1),
-                                                           futures_added + 1):
+                    for (added_count, args) in enumerate(itertools.islice(file_stream, 1),
+                                                         added_count + 1):
                         futures.add(executor.submit(self.execute_nprint, *args))
+
+                    if not all_done and added_count == 0 and not futures:
+                        all_done = True
+
+                        if self.args.verbosity >= 3:
+                            print('nPrint tasks complete:', timing.time_elapsed)
 
                     # Share the result.
                     try:
                         yield future.result()
                     except execute.nprint.CommandError:
-                        # TODO
-                        pass
+                        failure_count += 1
 
-                if futures_added and self.args.verbosity >= 3:
-                    print('Enqueued', futures_added, 'more nPrint task(s)')
+                if added_count and self.args.verbosity >= 3:
+                    print('Enqueued', added_count, 'more nPrint task(s)')
+
+            if failure_count > 0:
+                print('nPrint task(s) failed:', failure_count)
 
     def __pre__(self, parser, args, results):
         try:

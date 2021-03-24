@@ -40,6 +40,34 @@ class TestPcap(CLITestCase):
                         # its stdout a little harder
         )
 
+        npt_dir = temp_path / 'nprint'
+        self.assertFalse(npt_dir.exists())
+
+        feature_path = temp_path / 'feature' / 'features.csv.gz'
+        self.assertTrue(feature_path.exists())
+
+        graphs_path = temp_path / 'model' / 'graphs'
+        self.assertTrue(any(graphs_path.glob('*.pdf')))
+
+        models_path = temp_path / 'model' / 'models'
+        self.assertTrue(any(models_path.rglob('*.pkl')))
+
+    @testdir
+    def test_pcap_file_save_npt(self, tempdir):
+        temp_path = pathlib.Path(tempdir)
+
+        self.try_execute(
+            '--save-nprint',
+            '--tcp',
+            '--ipv4',
+            '--aggregator', 'index',
+            '--label-file', TEST_DATA / 'single-pcap' / 'labels.txt',
+            '--pcap-file', TEST_DATA / 'single-pcap' / 'test.pcap',
+            '--output', temp_path,
+            '--quiet',  # autogluon's threading makes capturing/suppressing
+                        # its stdout a little harder
+        )
+
         npt_path = temp_path / 'nprint' / 'test.npt'
         self.assertTrue(npt_path.exists())
 
@@ -57,6 +85,34 @@ class TestPcap(CLITestCase):
         temp_path = pathlib.Path(tempdir)
 
         self.try_execute(
+            '--tcp',
+            '--ipv4',
+            '--aggregator', 'pcap',
+            '--label-file', TEST_DATA / 'dir-pcap' / 'labels.txt',
+            '--pcap-dir', TEST_DATA / 'dir-pcap' / 'pcaps',
+            '--output', temp_path,
+            '--quiet',  # autogluon's threading makes capturing/suppressing
+                        # its stdout a little harder
+        )
+
+        npt_dir = temp_path / 'nprint'
+        self.assertFalse(npt_dir.exists())
+
+        feature_path = temp_path / 'feature' / 'features.csv.gz'
+        self.assertTrue(feature_path.exists())
+
+        graphs_path = temp_path / 'model' / 'graphs'
+        self.assertTrue(any(graphs_path.glob('*.pdf')))
+
+        models_path = temp_path / 'model' / 'models'
+        self.assertTrue(any(models_path.rglob('*.pkl')))
+
+    @testdir
+    def test_pcap_directory_save_npt(self, tempdir):
+        temp_path = pathlib.Path(tempdir)
+
+        self.try_execute(
+            '--save-nprint',
             '--tcp',
             '--ipv4',
             '--aggregator', 'pcap',
@@ -91,6 +147,7 @@ class TestPcap(CLITestCase):
         temp_path = pathlib.Path(tempdir)
 
         self.try_execute(
+            '--save-nprint',
             '--tcp',
             '--ipv4',
             '--aggregator', 'pcap',

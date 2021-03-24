@@ -140,6 +140,7 @@ metaclass level, via `__default_registry__`.)
 import abc
 import collections
 import itertools
+import time
 import types
 
 
@@ -346,26 +347,34 @@ class Pipeline(list):
         """Construct an iterator to execute the steps of the pipeline."""
         self.results = self.results_class() if results is None else results
 
-        # pre-pipline
-        for step in self:
-            step.__pre__(parser, args, self.results)
+        self.results.__timing__ = Timing()
+        self.results.__timing_steps__ = {}
 
-        run = []
+        with self.results.__timing__:
+            # pre-pipline
+            for step in self:
+                step.__pre__(parser, args, self.results)
 
-        for step in self[:]:
-            results_available = set(self.results.__dict__.keys())
+            run = []
 
-            if not results_available.issuperset(step.__requires__):
-                raise StepRequirementError(run, self, results_available)
+            for step in self[:]:
+                results_available = set(self.results.__dict__.keys())
 
-            step_results = step(args, self.results)
-            if step_results is not None:
-                self.merge(step_results)
+                if not results_available.issuperset(step.__requires__):
+                    raise StepRequirementError(run, self, results_available)
 
-            run.append(step)
-            self.remove(step)
+                step_timing = self.results.__timing_steps__[step] = Timing()
 
-            yield (step, step_results)
+                with step_timing:
+                    step_results = step(args, self.results)
+
+                if step_results is not None:
+                    self.merge(step_results)
+
+                run.append(step)
+                self.remove(step)
+
+                yield (step, step_results)
 
     def exhaust(self, args, results=None):
         """Execute the steps of the pipeline (non-iteratively)."""
@@ -407,3 +416,52 @@ class StepRequirementError(PipelineError):
         self.steps_run = steps_run
         self.steps_remaining = steps_remaining
         self.results_available = results_available
+
+
+class Timing:
+
+    class StaleTimer(ValueError):
+        pass
+
+    def __init__(self):
+        self.t0 = self.t1 = self.proc0 = self.proc1 = None
+
+    def start(self):
+        if self.t0 is not None:
+            raise self.StaleTimer
+
+        self.t0 = time.time()
+        self.proc0 = time.process_time()
+
+    def stop(self):
+        if self.t1 is not None:
+            raise self.StaleTimer
+
+        self.t1 = time.time()
+        self.proc1 = time.process_time()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *exc_info):
+        self.stop()
+
+    @property
+    def time_elapsed(self):
+        if self.t0 is None or self.t1 is None:
+            return None
+
+        return self.t1 - self.t0
+
+    @property
+    def proc_elapsed(self):
+        if self.proc0 is None or self.proc1 is None:
+            return None
+
+        return self.proc1 - self.proc0
+
+    def __repr__(self):
+        return (f'<{self.__class__.__name__}: '
+                f'time elapsed {self.time_elapsed} | '
+                f'process time elapsed {self.proc_elapsed}>')

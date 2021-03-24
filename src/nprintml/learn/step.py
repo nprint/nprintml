@@ -1,9 +1,9 @@
 """Pipeline Step to build models via AutoML: Learn"""
-import argparse
 import pathlib
 import typing
 
 from nprintml import pipeline
+from nprintml.util import NumericRangeType
 
 from . import AutoML
 
@@ -83,98 +83,3 @@ class Learn(pipeline.Step):
             graphs_path=learn.graphs_path,
             models_path=learn.models_path,
         )
-
-
-class NumericRangeType:
-    """Argument type validating that given value is of configured
-    numeric type and bounds.
-
-    Bounds may be specified as either `list` or `tuple`, the convention
-    indicating whether bounds are "inclusive" or "non-inclusive",
-    respectively.
-
-    Either the lower or upper bound may be specified as `None`,
-    indicating no bound.
-
-    For example:
-
-        parser.add_argument(
-            '--test-size',
-            default=0.3,
-            metavar='FLOAT',
-            type=NumericRangeType(float, (0, 1)),
-        )
-
-    The above argument, `--test-size`, will cast its input to `float`,
-    (or print an error for non-float input). Moreover, a "not in range"
-    error will be printed for inputs equal to zero or equal to or
-    greater than one.
-
-        parser.add_argument(
-            '--threads',
-            default=1,
-            metavar='INTEGER',
-            type=NumericRangeType(int, (0, None)),
-        )
-
-    In the above example, inputs are instead enforced as `int`; and,
-    there is _only_ a lower bound -- inputs must only be greater than
-    zero.
-
-        parser.add_argument(
-            '-q', '--quality',
-            default=0,
-            metavar='INTEGER',
-            type=NumericRangeType(int, [0, 4]),
-        )
-
-    Arguments may also be given inclusive bounds, as above -- inputs to
-    this example must be greater than or equal to zero, and less than or
-    equal to four.
-
-    """
-    bounds_message = "upper and lower bounds must be list or tuple of two elements"
-
-    def __init__(self, numeric_type, bounds):
-        self.numeric_type = numeric_type
-
-        try:
-            (self.lower_bound, self.upper_bound) = bounds
-        except ValueError as exc:
-            raise ValueError(f"{self.bounds_message} not: {bounds!r}") from exc
-        except TypeError as exc:
-            raise TypeError(
-                f"{self.bounds_message} not {bounds.__class__.__name__}: {bounds!r}"
-            ) from exc
-
-        if isinstance(bounds, tuple):
-            self.inclusive = False
-        elif isinstance(bounds, list):
-            self.inclusive = True
-        else:
-            raise TypeError(f"{self.bounds_message} not {bounds.__class__.__name__}: {bounds!r}")
-
-    def __call__(self, value):
-        try:
-            number = self.numeric_type(value)
-        except ValueError:
-            raise argparse.ArgumentTypeError(f"not {self.numeric_type.__name__}: {value!r}")
-
-        if self.inclusive:
-            if (
-                (self.lower_bound is not None and number < self.lower_bound) or
-                (self.upper_bound is not None and number > self.upper_bound)
-            ):
-                raise argparse.ArgumentTypeError(
-                    f"not in range [{self.lower_bound}, {self.upper_bound}]: {number!r}"
-                )
-        else:
-            if (
-                (self.lower_bound is not None and number <= self.lower_bound) or
-                (self.upper_bound is not None and number >= self.upper_bound)
-            ):
-                raise argparse.ArgumentTypeError(
-                    f"not in range ({self.lower_bound}, {self.upper_bound}): {number!r}"
-                )
-
-        return number

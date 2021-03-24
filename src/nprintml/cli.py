@@ -11,6 +11,7 @@ import argparse_formatter
 
 import nprintml
 from nprintml.pipeline import Pipeline
+from nprintml.util import NumericRangeType
 
 # ensure default steps of pipeline auto-load
 import nprintml.net.step
@@ -118,9 +119,9 @@ def build_parser(**parser_kwargs):
         '--concurrency',
         default=cpu_available_count,
         metavar='INTEGER',
-        type=int,
-        help="maximum number of concurrent processes to use (defaults to number "
-             f"reported by scheduler: {cpu_available_count})",
+        type=NumericRangeType(int, (0, None)),
+        help="maximum number of concurrent processes to apply to data preparation "
+             f"(defaults to number reported by scheduler: {cpu_available_count})",
     )
 
     output_default = get_default_directory()

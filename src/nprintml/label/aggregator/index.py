@@ -42,7 +42,7 @@ class IndexLabelAggregator(LabelAggregator):
         else:
             return npt_csv
 
-    def __call__(self, npt_csv, path_input_base=None, compress=False, sample_size=1):
+    def __call__(self, npt_csv, compress=False, sample_size=1, path_input_base=None):
         """Generate index driven features by loading an nPrint result
         and attaching labels, grouping by a given sample size if
         desired.

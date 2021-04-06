@@ -1,9 +1,11 @@
 import argparse
+import functools
 import io
 import itertools
 
 
 Empty = object()
+
 
 class PrimedIterator:
 
@@ -50,7 +52,30 @@ class PrimedIterator:
     def __repr__(self):
         return f'({self.__class__.__name__}: {self.iterator!r})'
 
+
 prime_iterator = PrimedIterator.prime
+
+
+class ResultsIterator:
+
+    @classmethod
+    def storeresults(cls, generator):
+        @functools.wraps(generator)
+        def wrapped(*args, **kwargs):
+            iterator = generator(*args, **kwargs)
+            return cls(iterator)
+
+        return wrapped
+
+    def __init__(self, iterator):
+        self.iterator = iterator
+        self.result = None
+
+    def __iter__(self):
+        self.result = yield from self.iterator
+
+
+storeresults = ResultsIterator.storeresults
 
 
 class HelpAction(argparse.Action):
@@ -181,7 +206,13 @@ class NumericRangeType:
         return number
 
 
-class NamedStringIO(io.StringIO):
+class _NamedIO:
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}: {self.name}>'
+
+
+class NamedStringIO(_NamedIO, io.StringIO):
     """StringIO featuring a `name` attribute to reflect the path
     represented by its contents.
 
@@ -191,7 +222,7 @@ class NamedStringIO(io.StringIO):
         self.name = name
 
 
-class NamedBytesIO(io.BytesIO):
+class NamedBytesIO(_NamedIO, io.BytesIO):
     """BytesIO featuring a `name` attribute to reflect the path
     represented by its contents.
 

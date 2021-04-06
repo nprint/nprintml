@@ -26,7 +26,7 @@ class LabelAggregator(abc.ABC):
         self.labels = None
 
     @abc.abstractmethod
-    def __call__(self, npt_csv, path_input_base=None, compress=False, sample_size=1):
+    def __call__(self, npt_csv, compress=False, sample_size=1, path_input_base=None):
         """Abstract method, expected to be implemented on a per-example
         label aggregation method.
 

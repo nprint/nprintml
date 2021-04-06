@@ -8,7 +8,6 @@ import pathlib
 import re
 import sys
 import textwrap
-import time
 import typing
 
 import nprintml
@@ -184,38 +183,47 @@ class Net(pipeline.Step):
         )
         self.own_arguments.add('save_nprint')
 
+    default_output_name = 'netcap.npt'
+
     @property
     def output_directory(self):
         return self.args.outdir / 'nprint'
 
-    @property
-    def default_output(self):
-        return self.output_directory / 'netcap.npt'
-
-    def make_output_directory(self):
+    def ensure_output_directory(self):
         if self.args.save_nprint:
             self.output_directory.mkdir()
 
-    def make_output_path(self, pcap_output):
-        npt_path = (self.output_directory / pcap_output).with_suffix('.npt')
+    @classmethod
+    def get_output_name(cls, pcap_output):
+        if pcap_output is None:
+            return cls.default_output_name
 
-        if self.args.save_nprint:
-            if npt_path.exists():
-                raise FileExistsError(None, 'nPrint output path collision', str(npt_path))
+        # pcap_output expects str and re is fast
+        return cls.get_output_name.pattern.sub('.npt', pcap_output)
 
-            npt_path.parent.mkdir(parents=True, exist_ok=True)
+    get_output_name.__func__.pattern = re.compile(r'\.pcap$', re.I)
+
+    def make_output_path(self, npt_file):
+        npt_path = self.output_directory / npt_file
+
+        if npt_path.exists():
+            raise FileExistsError(None, 'nPrint output path collision', str(npt_path))
+
+        npt_path.parent.mkdir(parents=True, exist_ok=True)
 
         return npt_path
 
     def generate_pcaps(self):
         if self.args.pcap_file or self.args.pcap_dir:
-            # stream pair of pcap path & "basis" for reconstructing tree
+            # stream pair of pcap path & short ref path for reconstructing tree
             for pcap_file in self.args.pcap_file:
-                yield (pathlib.Path(pcap_file), None)
+                pcap_path = pathlib.Path(pcap_file)
+                yield (pcap_path, pcap_path.name)
 
             for pcap_dir in self.args.pcap_dir:
-                for pcap_file in pcap_dir.rglob('*.pcap'):
-                    yield (pcap_file, pcap_dir)
+                for pcap_path in pcap_dir.rglob('*.pcap'):
+                    pcap_file = pcap_path.relative_to(pcap_dir)
+                    yield (pcap_path, str(pcap_file))
 
             return
 
@@ -261,24 +269,24 @@ class Net(pipeline.Step):
         args = ' '.join(self.generate_argv('[input_pcap]'))
         outfile.write_text(f'nprint {args}\n')
 
-    def filter_pcaps(self, pcap_files, labels=None):
+    def filtermap_pcaps(self, pcap_files, labels=None):
         skipped_files = collections.deque(maxlen=4)
         skipped_count = 0
 
-        for (pcap_file, dir_basis) in pcap_files:
-            if pcap_file:
-                pcap_output = pcap_file.relative_to(dir_basis) if dir_basis else pcap_file.name
-
-                if labels is not None and str(pcap_output) not in labels.index:
-                    skipped_files.append(pcap_output)
+        for (pcap_path, pcap_file) in pcap_files:
+            if pcap_path:
+                if labels is not None and pcap_file not in labels.index:
+                    skipped_files.append(pcap_file)
                     skipped_count += 1
                     continue
 
-                npt_file = self.make_output_path(pcap_output)
+                npt_file = self.get_output_name(pcap_file)
 
-                yield (pcap_file, npt_file)
+                yield (pcap_path, npt_file)
             else:
-                yield (None, None)
+                npt_file = self.get_output_name(None)
+
+                yield (None, npt_file)
 
         if skipped_count > 0 and self.args.verbosity >= 1:
             print('Skipped', skipped_count, 'PCAP file(s) missing from labels file:')
@@ -295,13 +303,11 @@ class Net(pipeline.Step):
             stdout=execute.nprint.PIPE,
         )
 
-        out_file = npt_file or self.default_output
-
         if self.args.save_nprint:
-            with open(out_file, 'wb') as npt_fd:
-                npt_fd.write(result.stdout)
+            out_path = self.make_output_path(npt_file)
+            out_path.write_bytes(result.stdout)
 
-        return NamedBytesIO(result.stdout, name=out_file)
+        return NamedBytesIO(result.stdout, name=npt_file)
 
     def generate_npts(self, file_stream, timing):
         # Spawn thread pool of same size as number of concurrent
@@ -370,11 +376,11 @@ class Net(pipeline.Step):
     def __call__(self, args, results):
         self.write_nprint_config()
 
-        self.make_output_directory()
+        self.ensure_output_directory()
 
         pcap_files = self.generate_pcaps()
 
-        file_stream = self.filter_pcaps(pcap_files, results.labels)
+        file_stream = self.filtermap_pcaps(pcap_files, results.labels)
 
         # Time stream specially as it continues even after step formally completed:
         stream_timing = results.__timing_steps__[self.generate_npts] = pipeline.Timing()

@@ -30,7 +30,7 @@ class Label(pipeline.Step):
     """
     __pre_provides__ = ('labels',)
     __provides__ = LabelResult
-    __requires__ = ('nprint_path', 'nprint_stream')
+    __requires__ = ('nprint_stream',)
 
     def __init__(self, parser):
         group_parser = parser.add_argument_group(
@@ -85,7 +85,6 @@ class Label(pipeline.Step):
     def __call__(self, args, results):
         features = self.aggregator(
             results.nprint_stream,
-            path_input_base=results.nprint_path,
             compress=args.compress,
             sample_size=args.sample_size,
         )

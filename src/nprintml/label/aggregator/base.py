@@ -108,13 +108,13 @@ class LabelAggregator(abc.ABC):
         missing_labels = npt.index.difference(label.index).tolist()
 
         try:
-            npt = npt.join(label).dropna(subset=['label'])
+            features = npt.join(label).dropna(subset=['label'])
         except KeyError as exc:
             raise LabelError("label input is malformed") from exc
 
-        samples1 = len(npt)
+        samples1 = len(features)
 
-        return (npt, missing_labels, samples0, samples1)
+        return (features, missing_labels, samples0, samples1)
 
     @staticmethod
     def flatten_columns(columns, sample_size):

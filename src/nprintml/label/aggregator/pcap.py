@@ -4,7 +4,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from nprintml.util import storeresults
+from nprintml.util import prime_iterator, storeresults
 
 from . import LabelAggregator, AggregationLengthError, AggregationPathError
 
@@ -60,25 +60,44 @@ class PcapLabelAggregator(LabelAggregator):
     def flatten_npt(indexed_files):
         print('Loading nPrints')
 
-        # We need every sample size to be the same, so we'll find the
-        # largest nPrint in all of the files and pad each sample with
-        # empty nPrints.
-        header = usecols = None
+        # Header should be constant across all files so configure based on first.
+        #
+        # Must establish what the header is (cols_header: to share) and
+        # how long it is / its indices (use_cols: internal).
+        try:
+            indexed_files = prime_iterator(indexed_files)
+        except StopIteration:
+            # whoops already empty
+            cols_header = use_cols = None
+        else:
+            (_file_index, npt_file) = indexed_files.first
+
+            header = np.genfromtxt(npt_file, delimiter=',', max_rows=1, dtype=str)
+
+            # ignore data index (src_ip)
+            cols_header = header[1:]
+            use_cols = np.arange(1, len(header))
+
+            # be kind -- rewind (the first file descriptor)
+            try:
+                file_seek = npt_file.seek
+            except AttributeError:
+                # might be str, Path or something else we don't understand
+                pass
+            else:
+                file_seek(0)
+
+        # We need every sample size to be the same, so we'll report the
+        # length of the largest nPrint in all of the files, such that
+        # each sample may be padded with nPrint-appropriate empty values.
         max_length = file_count = 0
 
         for (file_count, (file_index, npt_file)) in enumerate(indexed_files, 1):
-            if header is None:
-                header = np.genfromtxt(npt_file, delimiter=',', max_rows=1, dtype=str)
-                usecols = np.arange(1, len(header))  # ignore data index (src_ip)
-                skip_header = 1 if isinstance(npt_file, (str, pathlib.Path)) else 0
-            else:
-                skip_header = 1
-
             npt = np.genfromtxt(
                 npt_file,
                 delimiter=',',
-                skip_header=skip_header,
-                usecols=usecols,
+                skip_header=1,
+                usecols=use_cols,
                 dtype=NPT_DTYPE,
             )
 
@@ -92,7 +111,7 @@ class PcapLabelAggregator(LabelAggregator):
 
         print('Loaded', file_count, 'nprints')
 
-        return (header[1:], max_length)
+        return (cols_header, max_length)
 
     @classmethod
     def merge_npt(cls, npts_flat):

@@ -9,9 +9,6 @@ from nprintml.util import prime_iterator, storeresults
 from . import LabelAggregator, AggregationLengthError, AggregationPathError
 
 
-NPT_DTYPE = np.dtype('int8')
-
-
 class PcapLabelAggregator(LabelAggregator):
     """A LabelAggregator that takes a directory of nPrint output files
     and considers each file a single sample, padding to the maximum
@@ -98,7 +95,7 @@ class PcapLabelAggregator(LabelAggregator):
                 delimiter=',',
                 skip_header=1,
                 usecols=use_cols,
-                dtype=NPT_DTYPE,
+                dtype=int,
             )
 
             npt_dim1 = len(npt.shape) == 1
@@ -116,7 +113,8 @@ class PcapLabelAggregator(LabelAggregator):
     @classmethod
     def merge_npt(cls, npts_flat):
         """Merge nPrint data from multiple output files."""
-        npts = pd.DataFrame(npts_flat, dtype=NPT_DTYPE)
+        # note: specification of dtype here is ineffective
+        npts = pd.DataFrame(npts_flat)
 
         # true index is generated from input; rather than iterate
         # multiple times, it's initially treated as data.
@@ -129,6 +127,10 @@ class PcapLabelAggregator(LabelAggregator):
         # here we set it:
         npts.fillna(-1, inplace=True)
 
+        # dtype is *mostly* int8 (byte) --
+        # *except* might include relative timestamp
+        npts = npts.apply(pd.to_numeric, downcast='integer')
+
         # though column names might not be TOO important they may be helpful.
         # here we flatten these as well from the maximum size we might require:
         (header, max_length) = npts_flat.result
@@ -136,7 +138,10 @@ class PcapLabelAggregator(LabelAggregator):
             npts.columns = cls.flatten_columns(header, max_length)
 
         print('nPrints padded to maximum size:', max_length)
-        print('nPrint features shape:', npts.shape)
+        print('nPrint features',
+              'shape:', npts.shape,
+              'dtypes:', npts.dtypes.unique(),
+              'size (mb):', npts.memory_usage(deep=True).sum() / 1024 / 1024)
 
         return npts
 

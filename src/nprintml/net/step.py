@@ -183,11 +183,12 @@ class Net(pipeline.Step):
         )
         self.own_arguments.add('save_nprint')
 
+    output_tag = 'nprint'
     default_output_name = 'netcap.npt'
 
     @property
     def output_directory(self):
-        return self.args.outdir / 'nprint'
+        return self.args.outdir / self.output_tag
 
     def ensure_output_directory(self):
         if self.args.save_nprint:
@@ -264,10 +265,9 @@ class Net(pipeline.Step):
         if npt_file:
             yield from ('--write_file', npt_file)
 
-    def write_nprint_config(self):
-        outfile = self.args.outdir / 'nprint.cfg'
+    def write_meta(self, target):
         args = ' '.join(self.generate_argv('[input_pcap]'))
-        outfile.write_text(f'nprint {args}\n')
+        target[self.output_tag] = {'cmd': f'nprint {args}'}
 
     def filtermap_pcaps(self, pcap_files, labels=None):
         skipped_files = collections.deque(maxlen=4)
@@ -374,7 +374,7 @@ class Net(pipeline.Step):
         self.args = args
 
     def __call__(self, args, results):
-        self.write_nprint_config()
+        self.write_meta(results.meta)
 
         self.ensure_output_directory()
 

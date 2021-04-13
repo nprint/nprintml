@@ -1,11 +1,13 @@
 """nprintML command-line interface entry-point"""
 import argparse
 import itertools
+import multiprocessing
 import os
 import pathlib
 import re
 import sys
 import time
+import toml
 
 import argparse_formatter
 
@@ -34,12 +36,15 @@ def execute(argv=None, **parser_kwargs):
 
         pipeline = Pipeline(parser)
 
-        args = parser.parse_args(argv)
+        args = parser.parse_args(argv, Namespace())
 
         check_output_directory(args)
 
-        for (step, results) in pipeline(parser, args):
+        for (step, results) in pipeline(parser, args, meta={}):
             print(step, results, sep=' → ')
+
+        with args.meta_file.open('w') as meta_file:
+            dump_meta(pipeline.results, meta_file)
 
         print('done →', pipeline.results)
     except KeyboardInterrupt:
@@ -114,7 +119,15 @@ def build_parser(**parser_kwargs):
         help="print exception tracebacks",
     )
 
-    cpu_available_count = len(os.sched_getaffinity(0))
+    try:
+        # glibc-only
+        sched_getaffinity = os.sched_getaffinity
+    except AttributeError:
+        # Note: this *may* be inaccurate in some shared environs
+        cpu_available_count = multiprocessing.cpu_count()
+    else:
+        cpu_available_count = len(sched_getaffinity(0))
+
     parser.add_argument(
         '--concurrency',
         default=cpu_available_count,
@@ -141,6 +154,15 @@ def build_parser(**parser_kwargs):
     )
 
     return parser
+
+
+class Namespace(argparse.Namespace):
+
+    meta_file_name = 'meta.toml'
+
+    @property
+    def meta_file(self):
+        return self.outdir / self.meta_file_name
 
 
 def exc_repr(exc):
@@ -205,3 +227,15 @@ def check_output_directory(args):
             args.__parser__.error(f'output path exists and is not a directory: {args.outdir}')
     else:
         args.outdir.mkdir(parents=True)
+
+
+def dump_meta(results, meta_file):
+    step_timing = (
+        (step.__name__, tuple(timing))
+        for (step, timing) in results.__timing_steps__.items()
+    )
+    meta_timing = dict(step_timing, total=tuple(results.__timing__))
+
+    meta = dict(results.meta, timing=meta_timing)
+
+    toml.dump(meta, meta_file)

@@ -1,0 +1,30 @@
+= Snowflake dataset
+
+The https://github.com/kyle-macmillan/snowflake_fingerprintability[Snowflake fingerprintability dataset] is a useful *benchmarking* target.
+
+Example support for executing nprintML against this is given below.
+
+
+== Set-up
+
+The https://github.com/kyle-macmillan/snowflake_fingerprintability/blob/master/webrtc-handshakes.zip[Snowflake WebRTC connection handshake data] must be retrieved, unzipped and made available to the below as `SNOWFLAKE_PATH`.
+
+
+== Full run
+
+All PCAP files are indexed and labeled by `snowflake-label.csv`.
+
+[source,sh]
+----
+nml --udp --ipv4 --aggregator=pcap --label-file=snowflake-label.csv --pcap-dir=$SNOWFLAKE_PATH
+----
+
+
+== Abridged run
+
+A subset of PCAP files are indexed and labeled by `snowflake-label-small.csv`.
+
+[source,sh]
+----
+nml --udp --ipv4 --aggregator=pcap --label-file=snowflake-label-small.csv --pcap-dir=$SNOWFLAKE_PATH
+----

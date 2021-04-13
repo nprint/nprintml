@@ -242,6 +242,10 @@ class Step(metaclass=StepMeta):
     def __repr__(self):
         return 'step:' + self.__class__.__name__
 
+    @property
+    def __name__(self):
+        return self.__class__.__name__.lower()
+
 
 class Pipeline(list):
     """Pipeline of executable Steps, instantiated from and extending an
@@ -343,9 +347,10 @@ class Pipeline(list):
 
         self.results = None
 
-    def __call__(self, parser, args, results=None):
+    def __call__(self, parser, args, results=None, **kwargs):
         """Construct an iterator to execute the steps of the pipeline."""
         self.results = self.results_class() if results is None else results
+        self.results.__dict__.update(kwargs)
 
         self.results.__timing__ = Timing()
         self.results.__timing_steps__ = {}
@@ -461,7 +466,13 @@ class Timing:
 
         return self.proc1 - self.proc0
 
+    def __iter__(self):
+        yield self.time_elapsed
+        yield self.proc_elapsed
+
     def __repr__(self):
-        return (f'<{self.__class__.__name__}: '
-                f'time elapsed {self.time_elapsed} | '
-                f'process time elapsed {self.proc_elapsed}>')
+        return f'<{self.__class__.__name__}: {self}>'
+
+    def __str__(self):
+        return (f'total time elapsed {self.time_elapsed} | '
+                f'process time elapsed {self.proc_elapsed}')

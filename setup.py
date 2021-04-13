@@ -18,6 +18,8 @@ INSTALL_REQUIRES = [
 
     'matplotlib ~= 3.3.4',
     'seaborn ~= 0.11.1',
+
+    'toml ~= 0.10.2',
 ]
 
 _DEV_REQUIRES = [

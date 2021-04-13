@@ -133,8 +133,8 @@ class Release(Local):
         )
 
     def prepare(self, args):
-        if args.version:
-            target = [f'dist/{self.distribution_name}-{version}*' for version in args.version]
+        if args.versions:
+            target = [f'dist/{self.distribution_name}-{version}*' for version in args.versions]
         else:
             target = [f'dist/{self.distribution_name}-*']
 

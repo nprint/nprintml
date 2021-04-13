@@ -1,6 +1,7 @@
 import functools
 import pathlib
 import tempfile
+import toml
 
 from .base import CLITestCase
 
@@ -52,6 +53,11 @@ class TestPcap(CLITestCase):
         models_path = temp_path / 'model' / 'models'
         self.assertTrue(any(models_path.rglob('*.pkl')))
 
+        meta_path = temp_path / 'meta.toml'
+        self.assertTrue(meta_path.exists())
+        self.assertEqual(toml.load(meta_path).get('nprint', {}).get('cmd'),
+                         'nprint --pcap_file [input_pcap] --ipv4 --tcp')
+
     @testdir
     def test_pcap_file_save_npt(self, tempdir):
         temp_path = pathlib.Path(tempdir)
@@ -80,6 +86,11 @@ class TestPcap(CLITestCase):
         models_path = temp_path / 'model' / 'models'
         self.assertTrue(any(models_path.rglob('*.pkl')))
 
+        meta_path = temp_path / 'meta.toml'
+        self.assertTrue(meta_path.exists())
+        self.assertEqual(toml.load(meta_path).get('nprint', {}).get('cmd'),
+                         'nprint --pcap_file [input_pcap] --ipv4 --tcp')
+
     @testdir
     def test_pcap_directory(self, tempdir):
         temp_path = pathlib.Path(tempdir)
@@ -106,6 +117,11 @@ class TestPcap(CLITestCase):
 
         models_path = temp_path / 'model' / 'models'
         self.assertTrue(any(models_path.rglob('*.pkl')))
+
+        meta_path = temp_path / 'meta.toml'
+        self.assertTrue(meta_path.exists())
+        self.assertEqual(toml.load(meta_path).get('nprint', {}).get('cmd'),
+                         'nprint --pcap_file [input_pcap] --ipv4 --tcp')
 
     @testdir
     def test_pcap_directory_save_npt(self, tempdir):
@@ -142,6 +158,11 @@ class TestPcap(CLITestCase):
         models_path = temp_path / 'model' / 'models'
         self.assertTrue(any(models_path.rglob('*.pkl')))
 
+        meta_path = temp_path / 'meta.toml'
+        self.assertTrue(meta_path.exists())
+        self.assertEqual(toml.load(meta_path).get('nprint', {}).get('cmd'),
+                         'nprint --pcap_file [input_pcap] --ipv4 --tcp')
+
     @testdir
     def test_pcap_directory_label_subset(self, tempdir):
         temp_path = pathlib.Path(tempdir)
@@ -176,3 +197,8 @@ class TestPcap(CLITestCase):
 
         models_path = temp_path / 'model' / 'models'
         self.assertTrue(any(models_path.rglob('*.pkl')))
+
+        meta_path = temp_path / 'meta.toml'
+        self.assertTrue(meta_path.exists())
+        self.assertEqual(toml.load(meta_path).get('nprint', {}).get('cmd'),
+                         'nprint --pcap_file [input_pcap] --ipv4 --tcp')

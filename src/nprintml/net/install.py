@@ -36,6 +36,7 @@ BUILD_COMMANDS = (
 )
 
 BUILD_DEPENDENCIES = (
+    'argp',
     'pcap',
 )
 
@@ -66,8 +67,14 @@ class PathOption(str, enum.Enum):
 
         """
         # if run as root assume they want to install globally
-        if os.geteuid() == 0:
-            return cls.system_global
+        try:
+            geteuid = os.geteuid
+        except AttributeError:
+            # windows :/
+            pass
+        else:
+            if geteuid() == 0:
+                return cls.system_global
 
         # if python's environment prefix is writable --
         # likely a virtual environment --
@@ -109,6 +116,12 @@ def execute(argv=None, **parser_kwargs):
         ),
         formatter_class=argparse_formatter.FlexiFormatter,
         **parser_kwargs,
+    )
+
+    parser.add_argument(
+        '-f', '--force',
+        action='store_true',
+        help="ignore dependency errors",
     )
 
     installation_path = parser.add_mutually_exclusive_group()
@@ -153,8 +166,15 @@ def execute(argv=None, **parser_kwargs):
     missing_dependencies = get_missing_dependencies()
 
     if missing_dependencies:
-        parser.error('missing dependenc(ies): ' + ', '.join(missing_dependencies) +
-                     '\nconsult: https://github.com/nprint/nprint/wiki/2.-Installation')
+        dependencies_message = (
+            'missing dependenc(ies): ' +
+            ', '.join(missing_dependencies) +
+            '\nconsult: https://github.com/nprint/nprint/wiki/2.-Installation'
+        )
+        if args.force:
+            print('[warn]', dependencies_message, file=sys.stderr)
+        else:
+            parser.error(dependencies_message)
 
     execute_bootstrap(build_commands)
 

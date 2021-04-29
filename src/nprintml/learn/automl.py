@@ -102,14 +102,10 @@ class AutoML:
                                             enable_datetime_features=False,
                                             enable_text_special_features=False,
                                             enable_text_ngram_features=False
-                                           )
-    
+        ) 
         # create our own feature metadata object as we know what the type of every
         # feature we have. Skip the label column in the training data when doing so
-        d = {}
-        for col in train_data.columns[:-1]:
-            d[col] = 'int'
-        fmd = FeatureMetadata(d)
+        fmd = FeatureMetadata(dict.fromkeys(train_data.columns[:-1], 'int'))
 
         task = TabularPredictor(
             label='label',

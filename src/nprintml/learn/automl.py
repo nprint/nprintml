@@ -13,6 +13,8 @@ import itertools
 import matplotlib.pyplot as plt
 import seaborn as sns
 from autogluon.tabular import TabularPredictor
+from autogluon.core.features.feature_metadata import FeatureMetadata
+from autogluon.features.generators import AutoMLPipelineFeatureGenerator
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import (
@@ -93,6 +95,17 @@ class AutoML:
         """Train prospective models."""
         # predictor gives us default access to the *best* predictor that
         # was trained on the task (otherwise we're just wrapping AutoGluon)
+
+        # create custom feature generator to force autogluon to use our features
+        # as they are
+        fg = AutoMLPipelineFeatureGenerator(enable_categorical_features=False,
+                                            enable_datetime_features=False,
+                                            enable_text_special_features=False,
+                                            enable_text_ngram_features=False)
+        # create our own feature metadata object as we know what the type of every
+        # feature we have. Skip the label column in the training data when doing so
+        fmd = FeatureMetadata(dict.fromkeys(train_data.columns[:-1], 'int'))
+
         task = TabularPredictor(
             label='label',
             eval_metric=eval_metric,
@@ -103,6 +116,8 @@ class AutoML:
             train_data=train_data,
             time_limit=time_limit,
             presets=self.QUALITY_PRESETS[quality],
+            feature_generator=fg,
+            feature_metadata=fmd
         )
 
     def test(self, predictor, test_data):

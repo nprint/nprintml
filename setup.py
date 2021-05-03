@@ -15,6 +15,7 @@ INSTALL_REQUIRES = [
     'numpy == 1.19.5',
 
     'pandas ~= 1.1.5',
+    'pyarrow ~= 4.0.0',
 
     'matplotlib ~= 3.3.4',
     'seaborn ~= 0.11.1',

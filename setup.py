@@ -46,7 +46,7 @@ setup(name='nprintml',
       long_description_content_type="text/markdown",
       url='https://github.com/nprint/nprintml',
       license='License :: OSI Approved :: Apache Software License',
-      python_requires='>=3.6,<4',
+      python_requires='>=3.6,<3.9',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=[

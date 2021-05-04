@@ -121,6 +121,12 @@ class PcapLabelAggregator(LabelAggregator):
         # now we can move it in place:
         npts.set_index(0, inplace=True)
 
+        # both columns and indices were ranges and as such the name of the
+        # index is currently set to the integer 0.
+        # for clarity and compatibility (e.g. with output to Feather) let's
+        # give the index its proper name:
+        npts.index.name = 'pcap'
+
         # npt lengths are unknown ahead of time; and, with flatten(), each becomes a row length.
         # luckily, we need not make them equal first -- pandas fills in na or None.
         # constructor doesn't allow specification of this missing sentinel;

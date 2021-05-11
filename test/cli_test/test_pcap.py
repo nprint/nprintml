@@ -1,31 +1,16 @@
-import functools
 import pathlib
-import tempfile
+import sys
 import toml
+from unittest.mock import patch
 
-from .base import CLITestCase
-
-
-TEST_ROOT = pathlib.Path(__file__).parent.parent
-
-TEST_DATA = TEST_ROOT / 'data'
+from .base import CLITestCase, TEST_DATA, mktestdir, testdir
 
 
-def mktestdir(prefix=f'nprintml.{__name__}.'):
-    return tempfile.TemporaryDirectory(prefix=prefix)
+def no_op_call(args, results):
+    return None
 
 
-def testdir(func):
-    """Decorator to wrap given function such that a temporary directory
-    is created and destroyed for each invocation.
-
-    """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        with mktestdir() as tempdir:
-            return func(*args, tempdir, **kwargs)
-
-    return wrapper
+no_learn_patch = patch('nprintml.learn.step.Learn.__call__', side_effect=no_op_call)
 
 
 class TestPcap(CLITestCase):
@@ -48,7 +33,7 @@ class TestPcap(CLITestCase):
         npt_dir = temp_path / 'nprint'
         self.assertFalse(npt_dir.exists())
 
-        feature_path = temp_path / 'feature' / 'features.fhr.zstd'
+        feature_path = temp_path / 'feature' / 'features.fhr'
         self.assertTrue(feature_path.exists())
 
         graphs_path = temp_path / 'model' / 'graphs'
@@ -68,39 +53,43 @@ class TestPcap(CLITestCase):
             'parquet.brotli', 'parquet.gzip', 'parquet.snappy',
             'feather.lz4',
         ):
-            with self.subTest(output_format=output_format):
-                with mktestdir() as tempdir:
-                    temp_path = pathlib.Path(tempdir)
+            with self.subTest(output_format=output_format), \
+                 no_learn_patch as no_learn_mock, \
+                 mktestdir() as tempdir:
 
-                    self.try_execute(
-                        '--save-features-format', output_format,
-                        '--tcp',
-                        '--ipv4',
-                        '--aggregator', 'index',
-                        '--label-file', TEST_DATA / 'single-pcap' / 'labels.txt',
-                        '--pcap-file', TEST_DATA / 'single-pcap' / 'test.pcap',
-                        '--output', temp_path,
-                        '--quiet',  # autogluon's threading makes capturing/suppressing
-                                    # its stdout a little harder
-                    )
+                temp_path = pathlib.Path(tempdir)
 
-                    npt_dir = temp_path / 'nprint'
-                    self.assertFalse(npt_dir.exists())
+                self.try_execute(
+                    '--save-features-format', output_format,
+                    '--tcp',
+                    '--ipv4',
+                    '--aggregator', 'index',
+                    '--label-file', TEST_DATA / 'single-pcap' / 'labels.txt',
+                    '--pcap-file', TEST_DATA / 'single-pcap' / 'test.pcap',
+                    '--output', temp_path,
+                    '--quiet',  # autogluon's threading makes capturing/suppressing
+                                # its stdout a little harder
+                )
 
-                    format_scheme = output_format.split('.')[-1]
-                    feature_path = temp_path / 'feature'
-                    self.assertTrue(any(feature_path.glob(f'features*.{format_scheme}')))
+                npt_dir = temp_path / 'nprint'
+                self.assertFalse(npt_dir.exists())
 
-                    graphs_path = temp_path / 'model' / 'graphs'
-                    self.assertTrue(any(graphs_path.glob('*.pdf')))
+                feature_path = temp_path / 'feature'
+                format_id = output_format[0]  # c, p or f
+                feature_path_stream = feature_path.glob(f'features.{format_id}*')
+                self.assertEqual(sum(1 for file_ in feature_path_stream), 1)
 
-                    models_path = temp_path / 'model' / 'models'
-                    self.assertTrue(any(models_path.rglob('*.pkl')))
+                # note: no model *artifact* assertions -- learn disabled
 
-                    meta_path = temp_path / 'meta.toml'
-                    self.assertTrue(meta_path.exists())
-                    self.assertEqual(toml.load(meta_path).get('nprint', {}).get('cmd'),
-                                     'nprint --pcap_file [input_pcap] --ipv4 --tcp')
+                no_learn_mock.assert_called_once()
+                (learn_call,) = no_learn_mock.mock_calls
+                (_args, results) = learn_call.args if sys.version_info >= (3, 8) else learn_call[1]
+                self.assertSequenceEqual(results.features.shape, (4921, 961))
+
+                meta_path = temp_path / 'meta.toml'
+                self.assertTrue(meta_path.exists())
+                self.assertEqual(toml.load(meta_path).get('nprint', {}).get('cmd'),
+                                 'nprint --pcap_file [input_pcap] --ipv4 --tcp')
 
     @testdir
     def test_pcap_file_no_save_features(self, tempdir):
@@ -154,7 +143,7 @@ class TestPcap(CLITestCase):
         npt_path = temp_path / 'nprint' / 'test.npt'
         self.assertTrue(npt_path.exists())
 
-        feature_path = temp_path / 'feature' / 'features.fhr.zstd'
+        feature_path = temp_path / 'feature' / 'features.fhr'
         self.assertTrue(feature_path.exists())
 
         graphs_path = temp_path / 'model' / 'graphs'
@@ -186,7 +175,7 @@ class TestPcap(CLITestCase):
         npt_dir = temp_path / 'nprint'
         self.assertFalse(npt_dir.exists())
 
-        feature_path = temp_path / 'feature' / 'features.fhr.zstd'
+        feature_path = temp_path / 'feature' / 'features.fhr'
         self.assertTrue(feature_path.exists())
 
         graphs_path = temp_path / 'model' / 'graphs'
@@ -226,7 +215,7 @@ class TestPcap(CLITestCase):
         npt_count = sum(1 for _npt_file in pathlib.Path(npt_path).rglob('*.npt'))
         self.assertEqual(npt_count, 202)
 
-        feature_path = temp_path / 'feature' / 'features.fhr.zstd'
+        feature_path = temp_path / 'feature' / 'features.fhr'
         self.assertTrue(feature_path.exists())
 
         graphs_path = temp_path / 'model' / 'graphs'
@@ -266,7 +255,7 @@ class TestPcap(CLITestCase):
         npt_count = sum(1 for _npt_file in pathlib.Path(npt_path).rglob('*.npt'))
         self.assertEqual(npt_count, 100)
 
-        feature_path = temp_path / 'feature' / 'features.fhr.zstd'
+        feature_path = temp_path / 'feature' / 'features.fhr'
         self.assertTrue(feature_path.exists())
 
         graphs_path = temp_path / 'model' / 'graphs'

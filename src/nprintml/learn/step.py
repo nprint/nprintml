@@ -1,9 +1,12 @@
 """Pipeline Step to build models via AutoML: Learn"""
+import os
 import pathlib
 import typing
 
+import argparse_formatter
+
 from nprintml import pipeline
-from nprintml.util import NumericRangeType
+from nprintml.util import format_handlers, FileAccessType, NumericRangeType
 
 from . import AutoML
 
@@ -35,7 +38,7 @@ class Learn(pipeline.Step):
             metavar='FLOAT',
             type=NumericRangeType(float, (0, 1)),
             help="proportion of data split out for testing "
-                 f"(float between zero and one defaulting to {AutoML.TEST_SIZE})",
+                 "(float between zero and one defaulting to %(default)s)",
         )
         group_parser.add_argument(
             '--metric',
@@ -43,9 +46,8 @@ class Learn(pipeline.Step):
             default=AutoML.EVAL_METRIC,
             choices=AutoML.EVAL_METRICS_ALL,
             metavar='{...}',
-            help=f"metric by which predictions will be evaluated (default: {AutoML.EVAL_METRIC})\n"
-                 "select from:\n    " +
-                 ', '.join(AutoML.EVAL_METRICS_ALL),
+            help="metric by which predictions will be evaluated (default: %(default)s)\n"
+                 "    select from: %(choices)s",
         )
         group_parser.add_argument(
             '-q', '--quality',
@@ -53,10 +55,10 @@ class Learn(pipeline.Step):
             choices=range(len(AutoML.QUALITY_PRESETS)),
             metavar='INTEGER',
             type=int,
-            help=f"model fit quality level (default: {AutoML.QUALITY})\n"
-                 "select from:\n    " +
-                 '\n    '.join(f'{index}: {label}'
-                               for (index, label) in enumerate(AutoML.QUALITY_PRESETS)),
+            help="model fit quality level (default: %(default)s)\n"
+                 "    select from: " +
+                 ', '.join(f'{label} ({index})'
+                           for (index, label) in enumerate(AutoML.QUALITY_PRESETS)),
         )
         group_parser.add_argument(
             '--limit',
@@ -65,8 +67,46 @@ class Learn(pipeline.Step):
             metavar='INTEGER',
             type=int,
             help="maximum time (seconds) over which to train each model "
-                 f"(default: {AutoML.TIME_LIMIT})",
+                 "(default: %(default)s)",
         )
+
+        # below %(prog)s will refer to subcommand -- not what we want
+        base_program = 'python -m nprintml' if parser.prog.endswith('.py') else parser.prog
+
+        learn_only_parser = parser.subparsers.add_parser(
+            'learn',
+            description="run only the AutoML step given previously-saved or "
+                        "separately-prepared feature data\n\n"
+                        "arguments related to AutoML are optionally inherited from the base "
+                        "command (e.g.: --metric):\n\n"
+                        f"    {base_program} --metric=f1 learn ./data/features.fhr",
+            formatter_class=argparse_formatter.FlexiFormatter,
+            help="run only AutoML",
+            satisfies=self.__requires__,
+        )
+        learn_only_parser.add_argument(
+            'features_file',
+            metavar='FILE',
+            type=FileAccessType(os.R_OK),
+            help="path to features",
+        )
+        learn_only_parser.set_defaults(
+            __subparser__=learn_only_parser,
+        )
+
+        parser.set_defaults(
+            features_file=None,
+        )
+
+    def __pre__(self, parser, args, results):
+        if args.features_file:
+            try:
+                reader = format_handlers.get_reader(args.features_file)
+            except NotImplementedError:
+                subparser = args.__subparser__
+                subparser.error(f"unsupported file type: {args.features_file}")
+
+            results.features = reader(args.features_file)
 
     def __call__(self, args, results):
         learn = AutoML(results.features, args.outdir / 'model')

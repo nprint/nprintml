@@ -1,10 +1,32 @@
 import contextlib
+import functools
 import io
+import pathlib
 import sys
 import typing
 import unittest
 
 from nprintml import cli
+
+from test.base import mktestdir
+
+
+TEST_ROOT = pathlib.Path(__file__).parent.parent
+
+TEST_DATA = TEST_ROOT / 'data'
+
+
+def testdir(func):
+    """Decorator to wrap given function such that a temporary directory
+    is created and destroyed for each invocation.
+
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with mktestdir(f'nprintml.{func.__module__}.{func.__name__}.') as tempdir:
+            return func(*args, tempdir, **kwargs)
+
+    return wrapper
 
 
 class TeeIO:
@@ -34,7 +56,7 @@ class CLITestCase(unittest.TestCase):
     class CommandError(Exception):
 
         def __init__(self, code, result):
-            super().__init__(code)
+            super().__init__(code, result.stdout, result.stderr)
             self.code = code
             self.result = result
 

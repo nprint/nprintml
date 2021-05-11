@@ -2,7 +2,7 @@
 import argparse
 import unittest
 
-from nprintml import pipeline
+from nprintml import cli, pipeline
 
 import nprintml.net.step
 import nprintml.label.step
@@ -12,19 +12,19 @@ import nprintml.learn.step
 class TestPipeline(unittest.TestCase):
 
     def setUp(self):
-        self.parser = argparse.ArgumentParser()
+        self.parser = cli.build_parser()
 
     def test_eager_ordering(self):
         "pipeline determines step ordering upon inst'n and so extends parser"
-        self.assertEqual(len(self.parser._action_groups), 2)
+        self.assertEqual(len(self.parser._action_groups), 3)
 
         pline = pipeline.Pipeline(self.parser)
 
-        self.assertEqual(len(self.parser._action_groups), 5)
+        self.assertEqual(len(self.parser._action_groups), 6)
 
         for (defining_word, action_group) in zip(
             ('network', 'label', 'automl'),
-            self.parser._action_groups[2:],
+            self.parser._action_groups[3:],
         ):
             self.assertIn(defining_word, action_group.title)
 

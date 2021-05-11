@@ -13,6 +13,8 @@ import typing
 import nprintml
 from nprintml import pipeline
 from nprintml.util import (
+    DirectoryAccessType,
+    FileAccessType,
     HelpAction,
     NamedBytesIO,
     prime_iterator,
@@ -26,7 +28,6 @@ NPRINT_QUEUE_MAX = 10 ** 6
 
 class NetResult(typing.NamedTuple):
     """Pipeline Step results for Net"""
-    nprint_path: pathlib.Path
     nprint_stream: typing.Generator[NamedBytesIO, None, None]
 
 
@@ -132,18 +133,18 @@ class Net(pipeline.Step):
         )
         self.group_parser.add_argument(
             '-P', '--pcap-file', '--pcap_file',
-            default=(),
+            action='append',
+            default=[],
             metavar='FILE',
-            nargs='*',
             type=FileAccessType(os.R_OK),
             help="pcap infile",
         )
         self.own_arguments.add('pcap_file')
         self.group_parser.add_argument(
             '--pcap-dir', '--pcap_dir',
-            default=(),
+            action='append',
+            default=[],
             metavar='DIR',
-            nargs='*',
             type=DirectoryAccessType(ext='.pcap'),
             help="directory containing pcap infile(s) with file extension '.pcap'",
         )
@@ -391,7 +392,6 @@ class Net(pipeline.Step):
         active_stream = prime_iterator(npt_stream)
 
         return NetResult(
-            nprint_path=self.output_directory,
             nprint_stream=active_stream,
         )
 
@@ -417,90 +417,3 @@ def warn_version_mismatch():
             f"failed to parse version of nprint installed ({version_output})",
             file=sys.stderr,
         )
-
-
-class FileAccessType:
-    """Argument type to test a supplied filesystem path for specified
-    access.
-
-    Access level is indicated by bit mask.
-
-    `argparse.FileType` may be preferred when the path should be opened
-    in-process. `FileAccessType` allows for greater flexibility -- such
-    as passing the path on to a subprocess -- while still validating
-    access to the path upfront.
-
-    """
-    modes = {
-        os.X_OK: 'execute',
-        os.W_OK: 'write',
-        os.R_OK: 'read',
-        os.R_OK | os.X_OK: 'read-execute',
-        os.R_OK | os.W_OK: 'read-write',
-        os.R_OK | os.W_OK | os.X_OK: 'read-write-execute',
-    }
-
-    def __init__(self, access):
-        self.access = access
-
-        if access not in self.modes:
-            raise ValueError("bad mask", access)
-
-    @property
-    def mode(self):
-        return self.modes[self.access]
-
-    def __call__(self, path):
-        if os.path.isfile(path) and os.access(path, self.access):
-            return path
-
-        raise argparse.ArgumentTypeError(f"can't access '{path}' ({self.mode})")
-
-
-class DirectoryAccessType:
-    """Argument type to test a supplied filesystem directory path."""
-
-    def __init__(self, *, ext='', exists=None, empty=False, non_empty=False):
-        if ext:
-            non_empty = True
-
-        if non_empty:
-            exists = True
-
-        if empty and non_empty:
-            raise TypeError("directory cannot be both empty and non-empty")
-
-        self.ext = ext
-        self.exists = exists
-        self.empty = empty
-        self.non_empty = non_empty
-
-    def __call__(self, value):
-        path = pathlib.Path(value)
-
-        if self.exists is not None:
-            if self.exists:
-                if not path.is_dir():
-                    raise argparse.ArgumentTypeError(f"no such directory '{value}'")
-            else:
-                if path.exists():
-                    raise argparse.ArgumentTypeError(f"path already exists '{value}'")
-
-                if not os.access(path.parent, os.W_OK):
-                    raise argparse.ArgumentTypeError(f"path not write-accessible '{value}'")
-
-        if self.empty and any(path.glob('*')):
-            raise argparse.ArgumentTypeError(f"directory is not empty '{value}'")
-
-        if self.non_empty:
-            count = 0
-            for (count, child) in enumerate(path.rglob('*' + self.ext), 1):
-                if not os.access(child, os.R_OK):
-                    raise argparse.ArgumentTypeError(f"path(s) not read-accessible '{child}'")
-
-            if count == 0:
-                raise argparse.ArgumentTypeError("directory has no contents " +
-                                                 (f"({self.ext}) " if self.ext else "") +
-                                                 f"'{value}'")
-
-        return path

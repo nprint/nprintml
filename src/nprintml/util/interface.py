@@ -1,89 +1,6 @@
 import argparse
-import functools
-import io
-import itertools
-
-
-class PrimedIterator:
-
-    class Sentinel:
-        pass
-
-    Empty = Sentinel()
-    Missing = Sentinel()
-
-    @classmethod
-    def prime(cls, iterator, default=Missing):
-        """Retrieve the first item from the given iterator and return a new
-        iterator over *all* elements.
-
-        No elements from the original iterator are missed by the returned
-        iterator.
-
-        Rather, the iterator is thereby initiated, and tested for emptiness.
-
-        This can be a useful helper in emptiness checks (which must then
-        construct this secondary iterator wrapper over the first, retrieved
-        element and the remainder).
-
-        Much the same, this is useful to operations interested in the
-        first element of an iterator, (but which must also iterate over
-        its entirety).
-
-        This may also be useful in initializing complex generator functions
-        (e.g. those with buffers), without retrieving more than one item
-        from its stream, and maintaining its full contents.
-
-        If a second argument, the default, is given, and the iterator is
-        already empty/exhausted, then this default is returned instead of
-        raising StopIteration (as with `next`).
-
-        """
-        try:
-            first = next(iterator)
-        except StopIteration:
-            if default is not cls.Missing:
-                return default
-
-            raise
-
-        return cls(first, iterator)
-
-    def __init__(self, first, iterator):
-        self.first = first
-        self.iterator = iterator
-        self.__chain__ = itertools.chain((first,), iterator)
-
-    def __iter__(self):
-        yield from self.__chain__
-
-    def __repr__(self):
-        return f'({self.__class__.__name__}: {self.iterator!r})'
-
-
-prime_iterator = PrimedIterator.prime
-
-
-class ResultsIterator:
-
-    @classmethod
-    def storeresults(cls, generator):
-        @functools.wraps(generator)
-        def wrapped(*args, **kwargs):
-            iterator = generator(*args, **kwargs)
-            return cls(iterator)
-
-        return wrapped
-
-    def __init__(self, iterator):
-        self.iterator = iterator
-        self.result = None
-
-    def __iter__(self):
-        self.result = yield from self.iterator
-
-
-storeresults = ResultsIterator.storeresults
+import os
+import pathlib
 
 
 class HelpAction(argparse.Action):
@@ -214,27 +131,88 @@ class NumericRangeType:
         return number
 
 
-class _NamedIO:
+class FileAccessType:
+    """Argument type to test a supplied filesystem path for specified
+    access.
 
-    def __repr__(self):
-        return f'<{self.__class__.__name__}: {self.name}>'
+    Access level is indicated by bit mask.
 
-
-class NamedStringIO(_NamedIO, io.StringIO):
-    """StringIO featuring a `name` attribute to reflect the path
-    represented by its contents.
-
-    """
-    def __init__(self, initial_value='', newline='\n', name=None):
-        super().__init__(initial_value, newline)
-        self.name = name
-
-
-class NamedBytesIO(_NamedIO, io.BytesIO):
-    """BytesIO featuring a `name` attribute to reflect the path
-    represented by its contents.
+    `argparse.FileType` may be preferred when the path should be opened
+    in-process. `FileAccessType` allows for greater flexibility -- such
+    as passing the path on to a subprocess -- while still validating
+    access to the path upfront.
 
     """
-    def __init__(self, initial_bytes=b'', name=None):
-        super().__init__(initial_bytes)
-        self.name = name
+    modes = {
+        os.X_OK: 'execute',
+        os.W_OK: 'write',
+        os.R_OK: 'read',
+        os.R_OK | os.X_OK: 'read-execute',
+        os.R_OK | os.W_OK: 'read-write',
+        os.R_OK | os.W_OK | os.X_OK: 'read-write-execute',
+    }
+
+    def __init__(self, access):
+        self.access = access
+
+        if access not in self.modes:
+            raise ValueError("bad mask", access)
+
+    @property
+    def mode(self):
+        return self.modes[self.access]
+
+    def __call__(self, path):
+        if os.path.isfile(path) and os.access(path, self.access):
+            return path
+
+        raise argparse.ArgumentTypeError(f"can't access file at '{path}' ({self.mode})")
+
+
+class DirectoryAccessType:
+    """Argument type to test a supplied filesystem directory path."""
+
+    def __init__(self, *, ext='', exists=None, empty=False, non_empty=False):
+        if ext:
+            non_empty = True
+
+        if non_empty:
+            exists = True
+
+        if empty and non_empty:
+            raise TypeError("directory cannot be both empty and non-empty")
+
+        self.ext = ext
+        self.exists = exists
+        self.empty = empty
+        self.non_empty = non_empty
+
+    def __call__(self, value):
+        path = pathlib.Path(value)
+
+        if self.exists is not None:
+            if self.exists:
+                if not path.is_dir():
+                    raise argparse.ArgumentTypeError(f"no such directory '{value}'")
+            else:
+                if path.exists():
+                    raise argparse.ArgumentTypeError(f"path already exists '{value}'")
+
+                if not os.access(path.parent, os.W_OK):
+                    raise argparse.ArgumentTypeError(f"path not write-accessible '{value}'")
+
+        if self.empty and any(path.glob('*')):
+            raise argparse.ArgumentTypeError(f"directory is not empty '{value}'")
+
+        if self.non_empty:
+            count = 0
+            for (count, child) in enumerate(path.rglob('*' + self.ext), 1):
+                if not os.access(child, os.R_OK):
+                    raise argparse.ArgumentTypeError(f"path(s) not read-accessible '{child}'")
+
+            if count == 0:
+                raise argparse.ArgumentTypeError("directory has no contents " +
+                                                 (f"({self.ext}) " if self.ext else "") +
+                                                 f"'{value}'")
+
+        return path

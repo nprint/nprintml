@@ -143,6 +143,8 @@ import itertools
 import time
 import types
 
+from descriptors import classproperty
+
 
 #: Package default registry of concrete Steps
 __step_registry__ = set()
@@ -195,6 +197,20 @@ class Step(metaclass=StepMeta):
     #: Sequence of data keys on the results object -- gathered from the
     #: execution of preceding steps -- required for this step to execute
     __requires__ = ()
+
+    @classproperty
+    def provides(cls):
+        try:
+            return cls.__provides__._fields
+        except AttributeError:
+            pass
+
+        try:
+            return cls.__provides__.__dataclass_fields__
+        except AttributeError:
+            pass
+
+        return cls.__provides__
 
     @classmethod
     def __init_subclass__(cls, *, registry=None, **kwargs):
@@ -322,15 +338,7 @@ class Pipeline(list):
                 raise StepRequirementError(run, steps, results)
 
             for step in steps_satisfied:
-                try:
-                    provides = step.__provides__._fields
-                except AttributeError:
-                    try:
-                        provides = step.__provides__.__dataclass_fields__
-                    except AttributeError:
-                        provides = step.__provides__
-
-                results.update(provides)
+                results.update(step.provides)
                 run.append(step)
                 steps.remove(step)
                 yield step
@@ -401,6 +409,47 @@ class Pipeline(list):
                 raise KeyError('result key already defined', key)
 
             setattr(self.results, key, value)
+
+    def pre_satisfy(self, *fields):
+        """Remove from the pipeline those steps which provide the given
+        pre-satisfied `fields` of results.
+
+        This is a generator method, iteration of which produces the
+        values of removed steps' `group_parser` attribute, for the
+        purpose of updating the CLI to match (e.g. to ensure that
+        arguments of ejected steps are not required).
+
+        The pipeline is considered in reverse. Steps which provide no
+        more than those fields which have been pre-satisfied are
+        removed. Subsequently, fields which were required by only these
+        ejected steps are considered pre-satisfied as well (by cascade).
+
+        """
+        if not fields:
+            return
+
+        satisfied = set(fields)
+
+        for step in reversed(self):
+            if satisfied.issuperset(step.provides):
+                # we no longer need this step to provide what's already
+                # been satisfied -- remove it
+                self.remove(step)
+
+                # without the step in the pipeline its parser interface
+                # is no longer important/required -- share this with the
+                # caller (rather than attempt to handle here).
+                yield getattr(step, 'group_parser', None)
+
+                # let's also pretend therefore that all of that step's
+                # requirements have been satisfied -- IFF no other steps
+                # have the same requirement(s)
+                step_required = set(step.__requires__)
+                remaining_required = itertools.chain.from_iterable(step.__requires__
+                                                                   for step in self)
+                cascade_satisfied = step_required.difference(remaining_required)
+
+                satisfied.update(cascade_satisfied)
 
 
 class PipelineError(Exception):

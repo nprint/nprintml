@@ -8,6 +8,7 @@ README_PATH = pathlib.Path(__file__).parent / 'README.md'
 
 INSTALL_REQUIRES = [
     'argparse-formatter ~= 1.4',
+    'Dickens ~= 1.0.1',
 
     'autogluon.tabular ~= 0.1.0',
 

@@ -3,14 +3,13 @@ machine learning: Label
 
 """
 import argparse
-import functools
 import textwrap
 import typing
 
 import pandas as pd
 
 from nprintml import pipeline
-from nprintml.util import HelpAction
+from nprintml.util import format_handlers, HelpAction
 
 from .aggregator import registry as aggregators
 
@@ -41,53 +40,52 @@ class Label(pipeline.Step):
     feature_file_formats_default = 'feather.zstd'
 
     def __init__(self, parser):
-        group_parser = parser.add_argument_group(
+        self.group_parser = parser.add_argument_group(
             "aggregation of data under supplied labels",
         )
 
-        group_parser.add_argument(
+        self.group_parser.add_argument(
             '-L', '--label-file', '--label_file',
             metavar='FILE',
             required=True,
             type=argparse.FileType('r'),
             help="label file (CSV)",
         )
-        group_parser.add_argument(
+        self.group_parser.add_argument(
             '-a', '--aggregator',
             choices=aggregators,
             required=True,
             help="label aggregation method",
         )
-        group_parser.add_argument(
+        self.group_parser.add_argument(
             '--help-aggregator',
             action=HelpAction,
             help_action=print_aggregators,
             help="describe aggregators and exit",
         )
-        group_parser.add_argument(
+        self.group_parser.add_argument(
             '--sample-size', '--sample_size',
             metavar='INTEGER',
             type=int,
             default=1,
         )
-        group_parser.add_argument(
+        self.group_parser.add_argument(
             '--compress',
             action='store_true',
             help="drop columns which do not appear to provide any predictive signal",
         )
-        group_parser.add_argument(
+        self.group_parser.add_argument(
             '--no-save-features',
             action='store_false',
             dest='save_features',
             help="disable writing of features to disk "
                  "(writing enabled by default for inspection & reuse)",
         )
-        group_parser.add_argument(
+        self.group_parser.add_argument(
             '--save-features-format',
             choices=self.feature_file_formats,
             default=self.feature_file_formats_default,
-            help="file format in which to save features on disk "
-                 f"(default: {self.feature_file_formats_default})",
+            help="file format in which to save features on disk (default: %(default)s)",
         )
 
         self.aggregator = None
@@ -106,7 +104,7 @@ class Label(pipeline.Step):
         )
 
         if args.save_features:
-            writer = self.get_features_writer(args.save_features_format)
+            writer = format_handlers.get_writer(args.save_features_format)
 
             outdir = args.outdir / 'feature'
             outdir.mkdir()
@@ -114,54 +112,6 @@ class Label(pipeline.Step):
             writer(features, outdir)
 
         return LabelResult(features)
-
-    def get_features_writer(self, full_format):
-        dot_count = full_format.count('.')
-
-        if dot_count <= 1:
-            (file_format, file_compression) = (full_format.split('.') if dot_count == 1
-                                               else (full_format, None))
-
-            try:
-                writer = getattr(self, f'features_to_{file_format}')
-            except AttributeError:
-                pass
-            else:
-                return functools.partial(writer, compression=file_compression)
-
-        raise NotImplementedError(full_format)
-
-    @staticmethod
-    def features_to_csv(data, outdir, compression=None):
-        outname = 'features.csv'
-
-        if compression:
-            outname = f'{outname}.{compression}'
-
-        # Unlike others to_csv infers compression from name
-        data.to_csv(outdir / outname)
-
-    @staticmethod
-    def features_to_parquet(data, outdir, compression=None):
-        outname = 'features.parquet'
-
-        if compression:
-            outname = f'{outname}.{compression}'
-
-        data.to_parquet(outdir / outname, compression=compression)
-
-    @staticmethod
-    def features_to_feather(data, outdir, compression=None):
-        outname = 'features.fhr'
-
-        if compression:
-            outname = f'{outname}.{compression}'
-
-        # Like CSV, (unlike Parquet), Feather does not support custom indices.
-        #
-        # (And, unlike to_csv, to_feather raises an error if you mess this up.)
-        #
-        data.reset_index().to_feather(outdir / outname, compression=compression)
 
 
 def print_aggregators(parser, _namespace, _values, _option_string):

@@ -113,7 +113,7 @@ class Net(pipeline.Step):
         )
         self.group_parser.add_argument(
             '-O', '--write-index', '--write_index',
-            choices=range(5),
+            choices=range(6),
             metavar='INTEGER',
             type=int,
             help=textwrap.dedent("""\
@@ -123,7 +123,8 @@ class Net(pipeline.Step):
                     1: destination IP
                     2: source port
                     3: destination port
-                    4: flow (5-tuple)"""),
+                    4: flow (5-tuple)
+                    5: wlan tx mac"""),
         )
         self.group_parser.add_argument(
             '-p', '--payload',
@@ -150,6 +151,11 @@ class Net(pipeline.Step):
         )
         self.own_arguments.add('pcap_dir')
         self.group_parser.add_argument(
+            '-r', '--radiotap',
+            action='store_true',
+            help="include radiotap headers",
+        )
+        self.group_parser.add_argument(
             '-R', '--relative-timestamps', '--relative_timestamps',
             action='store_true',
             help="include relative timestamp field",
@@ -163,6 +169,11 @@ class Net(pipeline.Step):
             '-u', '--udp',
             action='store_true',
             help="include udp headers",
+        )
+        self.group_parser.add_argument(
+            '-w', '--wlan',
+            action='store_true',
+            help="include wlan headers",
         )
         self.group_parser.add_argument(
             '-x', '--nprint-filter', '--nprint_filter',

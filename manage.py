@@ -83,14 +83,14 @@ class Version(Local):
             if args.release:
                 rel_args = copy.copy(args)
                 if stdout is None:
-                    rel_args.version = ('DRY-RUN',)
+                    rel_args.versions = ('DRY-RUN',)
                 else:
                     (version_match,) = re.finditer(
                         r'^new_version=([\d.]+)$',
                         stdout,
                         re.M,
                     )
-                    rel_args.version = version_match.groups()
+                    rel_args.versions = version_match.groups()
                 yield self.root['release'].prepare(rel_args)
         elif args.release:
             parser.error('will not release package without build')

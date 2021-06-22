@@ -20,7 +20,6 @@ Depending on your situation, consider [pyenv](https://github.com/pyenv/pyenv) fo
 nprintML further requires nPrint (see below).
 
 ### Installation
-**Installation Note** - `nprintml` leverages `Autogluon` for AutoML. We do _not install_ all of the models available in `Autogluon` by default. If you wish to leverage all the models supported, you will need to install them individually through [AutoGluon](https://auto.gluon.ai/stable/index.html)
 
 nprintML itself is available for download from the [Python Package Index (PyPI)](https://pypi.org/project/nprintml/) and via `pip`:
 
@@ -45,6 +44,14 @@ nPrint may thereby be installed system-globally, to the user environment, to the
 `nprint-install` is identically available through its Python module (no different from `pip` above):
 
     python -m nprintml.net.install
+
+### Further set-up
+
+nprintML leverages [AutoGluon](https://auto.gluon.ai/) to manage AutoML. However, it _does not_ by default install additional libraries required for **all** models supported by AutoGluon. If you wish to test these models, you will need to install their requirements manually.
+
+AutoGluon will itself note which models it is unable to generate – and how to satisfy their requirements – during operation.
+
+For more information, consult the [AutoGluon documentation](https://auto.gluon.ai/).
 
 
 ## Using It

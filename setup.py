@@ -10,7 +10,7 @@ INSTALL_REQUIRES = [
     'argparse-formatter ~= 1.4',
     'Dickens ~= 1.0.1',
 
-    'autogluon.tabular ~= 1.0.0',
+    'autogluon.tabular ~= 0.1.0',
 
     # autogluon.core *also* requires numpy, so match autogluon
     'numpy == 1.19.5',

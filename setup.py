@@ -52,7 +52,7 @@ setup(name='nprintml',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=[
-          'Development Status :: 2 - Pre-Alpha',
+          'Development Status :: 4 - Beta',
           'Intended Audience :: Developers',
           'Intended Audience :: Education',
           'Intended Audience :: Information Technology',

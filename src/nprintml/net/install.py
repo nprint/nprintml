@@ -179,15 +179,16 @@ def execute(argv=None, **parser_kwargs):
     execute_bootstrap(build_commands)
 
     # check for pyenv tip
-    try:
-        pathlib.Path(args.prefix).relative_to(PYENV_PATH)
-    except ValueError:
-        # no apparent association with pyenv
-        pass
-    else:
-        print('\nℹ nPrint appears to have been installed into a Pyenv environment – '
-              'rehash may be required before it is available for use:\n\n'
-              '\tpyenv rehash\n')
+    if args.prefix:
+        try:
+            pathlib.Path(args.prefix).relative_to(PYENV_PATH)
+        except ValueError:
+            # no apparent association with pyenv
+            pass
+        else:
+            print('\nℹ nPrint appears to have been installed into a Pyenv environment – '
+                  'rehash may be required before it is available for use:\n\n'
+                  '\tpyenv rehash\n')
 
 
 def get_build_commands(**kwargs):

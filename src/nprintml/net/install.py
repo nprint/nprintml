@@ -109,7 +109,7 @@ def execute(argv=None, **parser_kwargs):
 
             "  Specify any of the following options to install nPrint either:\n\n"
 
-            + '\n'.join(f'    • {option}' for option in PathOption) + "\n\n" +
+            + '\n\n'.join(f'    • {option}' for option in PathOption) + "\n\n" +
 
             "  For the current invocation and without options nPrint will be installed "
             f"by default {path_option_default.help_text}."

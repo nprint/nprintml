@@ -4,12 +4,24 @@ This module populates ``manage`` sub-commands.
 
 """
 import copy
+import pathlib
 import re
 
 from argparse import REMAINDER
 
 import argparse_formatter
-from argcmdr import local, Local, LocalRoot
+from argcmdr import local, Local, localmethod, LocalRoot
+
+
+DISTRO_NAME = 'nprintml'
+
+REPO_OWNER = 'nprint'
+REPO_NAME = 'nprintML'
+REPO_URI = f'https://github.com/{REPO_OWNER}/{REPO_NAME}'
+
+REGISTRY_URI = f'ghcr.io/{REPO_OWNER}/{DISTRO_NAME}'
+
+REPO_ROOT = pathlib.Path(__file__).absolute().parent
 
 
 class Manage(LocalRoot):
@@ -123,8 +135,6 @@ class Release(Local):
     # concerns -- over credentials sharing.)
     # (See also: https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 
-    distribution_name = 'nprintml'
-
     def __init__(self, parser):
         parser.add_argument(
             'versions',
@@ -134,8 +144,30 @@ class Release(Local):
 
     def prepare(self, args):
         if args.versions:
-            target = [f'dist/{self.distribution_name}-{version}*' for version in args.versions]
+            target = [f'dist/{DISTRO_NAME}-{version}*' for version in args.versions]
         else:
-            target = [f'dist/{self.distribution_name}-*']
+            target = [f'dist/{DISTRO_NAME}-*']
 
         return self.local.FG, self.local['twine']['upload'][target]
+
+
+@Manage.register
+class Image(Local):
+    """manage docker image"""
+
+    @localmethod('version', help="version of nprintML to build (e.g. 1.0.4)")
+    @localmethod('--no-latest', action='store_false', dest='latest',
+                 help='do NOT tag image as "latest"')
+    def build(self, args):
+        """build image"""
+        cmd = self.local['docker'][
+            'build',
+            '--label', f'org.opencontainers.image.source={REPO_URI}',
+            '--build-arg', f'NML_VERSION={args.version}',
+            '--tag', f'{REGISTRY_URI}:{args.version}',
+        ]
+
+        if args.latest:
+            cmd = cmd['--tag', f'{REGISTRY_URI}:latest']
+
+        return self.local.FG, cmd[REPO_ROOT / 'image']

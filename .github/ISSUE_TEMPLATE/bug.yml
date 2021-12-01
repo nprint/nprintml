@@ -30,15 +30,15 @@ body:
     attributes:
       label: Version
       description: What version of the software were you running?
-      placeholder: Run: nprintml --version
+      placeholder: "Run: nprintml --version"
     validations:
       required: true
   - type: textarea
     id: system
     attributes:
       label: Operating system
-      description: Tell us about your computer: operating system and version
-      placeholder: For example: lsb_release -a
+      description: "Tell us about your computer: operating system and version"
+      placeholder: "For example: lsb_release -a"
     validations:
       required: true
   - type: input

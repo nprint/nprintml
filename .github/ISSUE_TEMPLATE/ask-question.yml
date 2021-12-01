@@ -13,7 +13,7 @@ body:
   - type: checkboxes
     id: due-diligence
     attributes:
-      label: Due Diligence
+      label: Due diligence
       description: I confirm that I've attempted to answer this question using the existing documentation.
       options:
         - label: "I read the *$!# docs"

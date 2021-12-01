@@ -1,11 +1,11 @@
 blank_issues_enabled: true
 contact_links:
-  - name: nprintML README
+  - name: 🗒  nprintML README
     url: https://github.com/nprint/nprintML#readme
     about: Consult the nprintML README first.
-  - name: nprintML Wiki
+  - name: 🕮 nprintML Wiki
     url: https://github.com/nprint/nprintML/wiki
     about: Learn more about how to use nprintML here.
-  - name: nPrint Wiki
+  - name: 🕮 nPrint Wiki
     url: https://github.com/nprint/nprint/wiki
     about: Learn more about how to use nPrint here.

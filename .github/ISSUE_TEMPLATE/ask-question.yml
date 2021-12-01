@@ -1,0 +1,19 @@
+name: ❓ Ask a Question
+title: "[Question]: …"
+labels: ["question", "triage"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: "What's up?"
+      placeholder: How do I use this software to make more friends? I've been using it daily and it hasn't helped at all….
+    validations:
+      required: true
+  - type: checkboxes
+    id: due-diligence
+    attributes:
+      label: Due Diligence
+      description: I confirm that I've attempted to answer this question using the existing documentation.
+      options:
+        - label: "I read the *$!# docs"
+          required: true

@@ -1,12 +1,12 @@
 name: 🐞 Bug Report
 description: Report a bug
-title: "[Bug]: "
+title: "[Bug]: …"
 labels: ["bug", "triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        **Thanks for taking the time to fill out this bug report!**
 
         Please explain your situation in detail so that we can best understand what went wrong.
   - type: textarea
@@ -22,15 +22,7 @@ body:
     attributes:
       label: What happened?
       description: What happened instead of what you expected to happen?
-      placeholder: The Flux Capacitor emitted some light but then went "kapoot."
-    validations:
-      required: true
-  - type: input
-    id: version
-    attributes:
-      label: Version
-      description: What version of the software were you running?
-      placeholder: "Run: nprintml --version"
+      placeholder: The Flux Capacitor emitted some light but then it went "kapoot."
     validations:
       required: true
   - type: textarea
@@ -42,10 +34,18 @@ body:
     validations:
       required: true
   - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of the software were you running?
+      placeholder: "Run: nprintml --version"
+    validations:
+      required: true
+  - type: input
     id: contact
     attributes:
       label: Contact information
-      description: How can we get in touch with you if we need more info?
+      description: Optional: How can we get in touch with you if we need more info?
       placeholder: email@example.com
     validations:
       required: false

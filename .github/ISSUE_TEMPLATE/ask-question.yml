@@ -1,4 +1,5 @@
 name: ❓ Ask a Question
+description: Ask a question that's not covered by the documentation
 title: "[Question]: …"
 labels: ["question", "triage"]
 body:

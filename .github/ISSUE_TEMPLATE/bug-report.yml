@@ -45,7 +45,7 @@ body:
     id: contact
     attributes:
       label: Contact information
-      description: Optional: How can we get in touch with you if we need more info?
+      description: "Optional: How can we get in touch with you if we need more info?"
       placeholder: email@example.com
     validations:
       required: false

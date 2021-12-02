@@ -16,5 +16,5 @@ body:
       label: Due diligence
       description: I confirm that I've attempted to answer this question using the existing documentation.
       options:
-        - label: "I read the *$!# docs"
+        - label: "I have read the docs"
           required: true

@@ -1,6 +1,6 @@
 # Overview
 
-[Overview and Detailed Usage Link](https://nprint.github.io/nprintml.html)
+For a high level overview, installation instructions, and detailed usage information, please visit [the project's homepage](https://nprint.github.io/nprintml.html)
 
 ## Installing nPrintML
 

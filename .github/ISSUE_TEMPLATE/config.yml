@@ -3,9 +3,9 @@ contact_links:
   - name: 🗒️  nprintML README
     url: https://github.com/nprint/nprintML#readme
     about: Consult the nprintML README first.
-  - name: 📖 nprintML Wiki
-    url: https://github.com/nprint/nprintML/wiki
+  - name: 📖 nprintML Usage Information
+    url: https://nprint.github.io/nprintml_walk.html
     about: Learn more about how to use nprintML here.
-  - name: 📖 nPrint Wiki
-    url: https://github.com/nprint/nprint/wiki
+  - name: 📖 nPrint Usage Information
+    url: https://nprint.github.io/nprint_walk.html
     about: Learn more about how to use nPrint here.

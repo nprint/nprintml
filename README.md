@@ -2,7 +2,7 @@
 
 [Overview and Detailed Usage Link](https://nprint.github.io/nprintml.html)
 
-## Getting It
+## Installing nPrintML
 
 ### Dependencies
 
@@ -53,8 +53,7 @@ AutoGluon will itself note which models it is unable to generate – and how to 
 For more information, consult the [AutoGluon documentation](https://auto.gluon.ai/).
 
 
-## Using It
-
+## Usage 
 nprintML supplies the top-level shell command `nprintml` &ndash;
 
     nprintml ...
@@ -66,38 +65,8 @@ nprintML supplies the top-level shell command `nprintml` &ndash;
 In case of command path ambiguity and in support of debugging, the `nprintml` command is also available through its Python module:
 
     python -m nprintml ...
-
-The nPrintML traffic analysis pipeline is customizable. Traffic ingestion leverages nPrint, and as such supports its inputs. In addition, beyond a single PCAP file, nprintML may ingest multiple PCAP files and recursive directories of files, as outlined [in the wiki](https://github.com/nprint/nprintML/wiki).
-
-A simple example involves per-packet machine learning given a single PCAP and IP address labels:
-
-    nprintml --ipv4 --pcap-file test.pcap --label-file labels.txt --aggregator index
-
-The above instructs nprintML to execute a traffic analysis pipeline considering each packet in the file `test.pcap` as a sample, and to attach labels to each source IP address (nPrint's default index) as specified in `labels.txt`.
-
-The label file should be formatted as follows:
-
-    Item,Label  # (optional header line)
-    IP1,label1
-    IP2,label2
-    IP3,label3
-    ...
-
-Through this labeling scheme we can attach labels to ports, ip addresses, and entire flows with nPrintML. For more information and advanced usage see [the wiki](https://github.com/nprint/nprintML/wiki).
-
-Another example of using nPrintML is running a machine learning pipeline where every PCAP is considered to contain a single sample. The following command &ndash; (this time using terse aliases) &ndash; will create a machine learning pipeline using every PCAP file in the directory `pcaps/` and the labels in `labels.txt` with IPv4 nPrints:
-
-    nml -4 --pcap-dir pcaps/ -L labels.txt -a pcap
-
-The label file for the above follows the same format as in single PCAP usage, with only the `Item` column changing to specify file names as opposed to IP addresses:
-
-    item,label  # (optional header line)
-    path/name1.pcap,label1
-    path/name2.pcap,label2
-    path/name3.pcap,label3
-    ...
-
-Note that the `path/` in the above example is the path relative to the directory specified by `--pcap-dir`, that is relative to the directory `pcaps/`.
+    
+For detailed usage information with full examples of how to run nPrintML, please visit our [homepage](https://nprint.github.io/nprintml_walk.html)
 
 
 ## Development

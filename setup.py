@@ -30,7 +30,7 @@ INSTALL_REQUIRES = [
 ]
 
 with (REQUIREMENTS_PATH / 'dev.txt').open() as dev_fd:
-    _DEV_REQUIRES = list(parse_requirements(dev_fd))
+    _DEV_REQUIRES = list(map(str, parse_requirements(dev_fd)))
 
 _TESTS_REQUIRE = [
     'tox==3.23.0',

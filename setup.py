@@ -1,10 +1,15 @@
 """nprintml"""
 import pathlib
 
+from pkg_resources import parse_requirements
 from setuptools import find_packages, setup
 
 
-README_PATH = pathlib.Path(__file__).parent / 'README.md'
+DIR_PATH = pathlib.Path(__file__).parent
+
+README_PATH = DIR_PATH / 'README.md'
+
+REQUIREMENTS_PATH = DIR_PATH / 'requirement'
 
 INSTALL_REQUIRES = [
     'argparse-formatter ~= 1.4',
@@ -24,12 +29,8 @@ INSTALL_REQUIRES = [
     'toml ~= 0.10.2',
 ]
 
-_DEV_REQUIRES = [
-    'argcmdr==0.7.0',
-    'bumpversion==0.6.0',
-    'twine==3.4.0',
-    'wheel==0.36.2',
-]
+with (REQUIREMENTS_PATH / 'dev.txt').open() as dev_fd:
+    _DEV_REQUIRES = list(parse_requirements(dev_fd))
 
 _TESTS_REQUIRE = [
     'tox==3.23.0',

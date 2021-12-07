@@ -158,6 +158,7 @@ class Image(Local):
     @localmethod('version', help="version of nprintML to build (e.g. 1.0.4)")
     @localmethod('--no-latest', action='store_false', dest='latest',
                  help='do NOT tag image as "latest"')
+    @localmethod('--push', action='store_true', help="push built image to registry")
     def build(self, args):
         """build image"""
         cmd = self.local['docker'][
@@ -170,4 +171,19 @@ class Image(Local):
         if args.latest:
             cmd = cmd['--tag', f'{REGISTRY_URI}:latest']
 
-        return self.local.FG, cmd[REPO_ROOT / 'image']
+        yield self.local.FG, cmd[REPO_ROOT / 'image']
+
+        if args.push:
+            push_args = copy.copy(args)
+            push_args.version = [args.version]
+            if args.latest:
+                push_args.version.append('latest')
+
+            yield from self['push'].prepare(push_args)
+
+    @localmethod('version', nargs='*', help="subset of version(s) to push")
+    def push(self, args):
+        """push image"""
+        targets = [f'{REGISTRY_URI}:{version}' for version in args.version] or [REGISTRY_URI]
+        for target in targets:
+            yield self.local.FG, self.local['docker']['push', target]

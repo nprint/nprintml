@@ -2,7 +2,7 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs: 
+    inputs:
       release-type:
         description: type of release
         required: true

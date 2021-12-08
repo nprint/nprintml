@@ -1,8 +1,13 @@
-# Overview
+# nPrintML
 
-For a high level overview, installation instructions, and detailed usage information, please visit [the project's homepage](https://nprint.github.io/nprintml.html)
+## Overview
 
-## Installing nPrintML
+nPrintML bridges the gap between [nPrint](https://nprint.github.io/nprint.html), which generates standard fingerprints for packets, and AutoML, which allows for optimized model training and traffic analysis. nPrintML enables users with network traffic and labels to perform optimized packet-level traffic analysis **without writing any code**.
+
+For a high-level overview, installation instructions, and detailed usage information, please visit [the project's homepage](https://nprint.github.io/nprintml.html).
+
+
+## Set-up
 
 ### Dependencies
 
@@ -16,29 +21,31 @@ As needed, consult your package manager or [python.org](https://python.org/).
 
 Depending on your situation, consider [pyenv](https://github.com/pyenv/pyenv) for easy installation and management of arbitrary versions of Python.
 
-nprintML further requires nPrint (see below).
+nPrintML further requires nPrint (see below).
 
 ### Installation
 
-nprintML itself is available for download from the [Python Package Index (PyPI)](https://pypi.org/project/nprintml/) and via `pip`:
+nPrintML itself is available for download from the [Python Package Index (PyPI)](https://pypi.org/project/nprintml/) and via `pip`, _e.g._:
 
     python -m pip install nprintml
 
+(Note: The `python` or `pip` executable used to install nPrintML depends upon your system and as discussed in the preceding section. And, for example, your system might supply a `python3` command, but _not_ a `python` command. As such, the above may be adapted to your system.)
+
 This downloads, builds and installs the `nprintml` console command. If you're happy to manage your Python (virtual) environment, you're all set with the above.
 
-That said, installation of this command via a tool such as [pipx](https://pipxproject.github.io/pipx/) is strongly encouraged. pipx will ensure that nprintML is installed into its own virtual environment, such that its third-party libraries do not conflict with any others installed on your system.
+That said, installation of this command via a tool such as [pipx](https://pipxproject.github.io/pipx/) is strongly encouraged. pipx will ensure that nPrintML is installed into its own virtual environment, such that its third-party libraries do not conflict with any others installed on your system.
 
-(Note that nPrint and nprintML are unrelated to the PyPI distribution named "nprint.")
+(Note that nPrint and nPrintML are unrelated to the PyPI distribution named "nprint.")
 
 ### Post-installation
 
-nprintML depends on the nPrint command, which may be installed separately, (with reference to the [nPrint documentation](https://github.com/nprint/nprint/wiki/2.-Installation)).
+nPrintML depends on the nPrint command, which may be installed separately, (with reference to the [nPrint documentation](https://github.com/nprint/nprint/wiki/2.-Installation)).
 
-For quick-and-easy satisfaction of this requirement, nprintML supplies the bootstrapping command `nprint-install`, which is made available to your environment with nprintML installed. This command will inspect its execution environment and attempt to retrieve, compile and install nPrint with the most appropriate defaults:
+For quick-and-easy satisfaction of this requirement, nPrintML supplies the bootstrapping command `nprint-install`, which is made available to your environment with nPrintML installed. This command will inspect its execution environment and attempt to retrieve, compile and install nPrint with the most appropriate defaults:
 
     nprint-install
 
-nPrint may thereby be installed system-globally, to the user environment, to the (virtual) environment to which nprintML was installed, or to a specified path prefix. Consult the command's `--help` for more information.
+nPrint may thereby be installed system-globally, to the user environment, to the (virtual) environment to which nPrintML was installed, or to a specified path prefix. Consult the command's `--help` for more information.
 
 `nprint-install` is identically available through its Python module (no different from `pip` above):
 
@@ -46,15 +53,16 @@ nPrint may thereby be installed system-globally, to the user environment, to the
 
 ### Further set-up
 
-nprintML leverages [AutoGluon](https://auto.gluon.ai/) to manage AutoML. However, it _does not_ by default install additional libraries required for **all** models supported by AutoGluon. If you wish to test these models, you will need to install their requirements manually.
+nPrintML leverages [AutoGluon](https://auto.gluon.ai/) to manage AutoML. However, it _does not_ by default install additional libraries required for **all** models supported by AutoGluon. If you wish to test these models, you will need to install their requirements manually.
 
 AutoGluon will itself note which models it is unable to generate – and how to satisfy their requirements – during operation.
 
 For more information, consult the [AutoGluon documentation](https://auto.gluon.ai/).
 
 
-## Usage 
-nprintML supplies the top-level shell command `nprintml` &ndash;
+## Usage
+
+nPrintML supplies the top-level shell command `nprintml` &ndash;
 
     nprintml ...
 
@@ -65,7 +73,7 @@ nprintML supplies the top-level shell command `nprintml` &ndash;
 In case of command path ambiguity and in support of debugging, the `nprintml` command is also available through its Python module:
 
     python -m nprintml ...
-    
+
 For detailed usage information with full examples of how to run nPrintML, please visit our [homepage](https://nprint.github.io/nprintml_walk.html)
 
 
@@ -82,9 +90,8 @@ Development tasks are then managed via [argcmdr](https://github.com/dssg/argcmdr
     manage version patch -m "initial release of nprintml" \
            --build                                        \
            --release
-           
-           
-           
+
+
 ## Citing nPrintML
 
 ```

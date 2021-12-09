@@ -43,7 +43,7 @@ EXTRAS_REQUIRE = {
 
 
 setup(name='nprintml',
-      version='1.0.4',
+      version='1.1.0',
       description='Fully automated traffic analysis with nPrint',
       long_description=README_PATH.read_text(),
       long_description_content_type="text/markdown",

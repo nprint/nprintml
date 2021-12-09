@@ -37,7 +37,7 @@ jobs:
         with:
           result-encoding: string
           script: |
-            const info = await github.request(github.event.sender.url)
+            const info = await github.request(context.payload.sender.url)
             return info.name
 
       - name: Checkout repository

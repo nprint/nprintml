@@ -20,10 +20,16 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
-    if: secrets[env.PYPI_TOKEN_VAR] && secrets[env.AUTHOR_EMAIL_VAR]
-
     steps:
-      # neither sender name nor email are provided to the workflow;
+      # "secrets" not (yet) available to "if" context (cannot check values in "jobs.release.if")
+      - name: Check secrets
+        run: |
+          [ -n "$PYPI_TOKEN" ] && [ -n "$AUTHOR_EMAIL" ]
+        env:
+          PYPI_TOKEN: ${{ secrets[env.PYPI_TOKEN_VAR] }}
+          AUTHOR_EMAIL: ${{ secrets[env.AUTHOR_EMAIL_VAR] }}
+
+      # neither sender name nor email are provided to the workflow context;
       # and, email isn't reliably available from API (hence the secret)
       - name: Look up sender's name
         id: sender-name

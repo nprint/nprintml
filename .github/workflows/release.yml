@@ -65,6 +65,17 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets[env.PYPI_TOKEN_VAR] }}
 
+      - name: Discover latest tag
+        id: latest-tag
+        run: echo ::set-output name=name::"$(git tag --list --sort=version:refname | tail -n 1)"
+
+      - name: Check release
+        run: |
+          while ! pip index versions nprintml | grep ${{ steps.latest-tag.outputs.name }}; do
+            echo "waiting on pypi to publish nprintml==${{ steps.latest-tag.outputs.name }} ..."
+            sleep 2
+          done
+
       - name: Push version bump & tag
         run: |
           git push
@@ -76,10 +87,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Discover latest tag
-        id: latest-tag
-        run: echo ::set-output name=name::"$(git tag --list --sort=version:refname | tail -n 1)"
 
       - name: Build image & push to GitHub container registry
         run: manage --show image build --push ${{ steps.latest-tag.outputs.name }}

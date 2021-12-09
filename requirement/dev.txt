@@ -1,4 +1,5 @@
 argcmdr==0.7.0
+argparse-formatter~=1.4
 bumpversion==0.6.0
 twine==3.4.0
 wheel==0.36.2

@@ -76,7 +76,7 @@ In case of command path ambiguity and in support of debugging, the `nprintml` co
 
     python -m nprintml ...
 
-For detailed usage information with full examples of how to run nPrintML, please visit our [homepage](https://nprint.github.io/nprintml_walk.html)
+For detailed usage information with full examples of how to run nPrintML, please visit our [homepage](https://nprint.github.io/nprintml_walk.html).
 
 
 ## Demo

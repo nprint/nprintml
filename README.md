@@ -109,7 +109,7 @@ A reasonable installation of the script (globally) might include the following:
 
     DEST="/usr/local/bin"
 
-    curl --output-dir="$DEST" -O https://raw.githubusercontent.com/nprint/nprintML/main/image/nprintml-docker
+    curl --output-dir "$DEST" -O https://raw.githubusercontent.com/nprint/nprintML/main/image/nprintml-docker
 
     chmod +x "$DEST"/nprintml-docker
 

@@ -11,35 +11,45 @@ README_PATH = DIR_PATH / 'README.md'
 
 REQUIREMENTS_PATH = DIR_PATH / 'requirement'
 
-INSTALL_REQUIRES = [
-    'argparse-formatter ~= 1.4',
-    'Dickens ~= 1.0.1',
 
-    'autogluon.tabular ~= 0.1.0',
+def get_requirements(path):
+    with path.open() as fd:
+        return list(map(str, parse_requirements(fd)))
 
-    # autogluon.core *also* requires numpy, so match autogluon
-    'numpy == 1.19.5',
 
-    'pandas ~= 1.1.5',
-    'pyarrow ~= 4.0.0',
+_DEV_REQUIRES = get_requirements(REQUIREMENTS_PATH / 'dev.txt')
 
-    'matplotlib ~= 3.3.4',
-    'seaborn ~= 0.11.1',
-
-    'toml ~= 0.10.2',
-]
-
-with (REQUIREMENTS_PATH / 'dev.txt').open() as dev_fd:
-    _DEV_REQUIRES = list(map(str, parse_requirements(dev_fd)))
-
-_TESTS_REQUIRE = [
-    'tox==3.23.0',
-]
+_TESTS_REQUIRE = get_requirements(REQUIREMENTS_PATH / 'test.txt')
 
 EXTRAS_REQUIRE = {
     'dev': _DEV_REQUIRES + _TESTS_REQUIRE,
     'test': _TESTS_REQUIRE,
 }
+
+
+INSTALL_REQUIRES = [
+    'argparse-formatter ~= 1.4',
+
+    'Dickens ~= 2.0.0',
+
+    'autogluon.tabular ~= 0.6.0',
+
+    # autogluon *also* requires numpy and pandas so match autogluon:
+    'numpy == 1.23.5; python_version >= "3.8"',
+    'numpy == 1.21.6; python_version < "3.8"',
+
+    'pandas == 1.5.1; python_version >= "3.8"',
+    'pandas == 1.3.5; python_version < "3.8"',
+
+    'pyarrow ~= 10.0.1',
+
+    'matplotlib ~= 3.6.2; python_version >= "3.8"',
+    'matplotlib ~= 3.5.3; python_version < "3.8"',
+
+    'seaborn ~= 0.12.1',
+
+    'toml ~= 0.10.2',
+]
 
 
 setup(name='nprintml',
@@ -49,7 +59,7 @@ setup(name='nprintml',
       long_description_content_type="text/markdown",
       url='https://github.com/nprint/nprintml',
       license='License :: OSI Approved :: Apache Software License',
-      python_requires='>=3.6,<3.9',
+      python_requires='>=3.7,<3.10',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=[
@@ -61,9 +71,9 @@ setup(name='nprintml',
           'Intended Audience :: System Administrators',
           'Intended Audience :: Telecommunications Industry',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
           'Topic :: Internet',
           'Topic :: Software Development :: Libraries',
           'Topic :: Software Development :: Libraries :: Python Modules',

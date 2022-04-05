@@ -2,9 +2,9 @@
 
 ## Overview
 
-nPrintML bridges the gap between [nPrint](https://nprint.github.io/nprint.html), which generates standard fingerprints for packets, and AutoML, which allows for optimized model training and traffic analysis. nPrintML enables users with network traffic and labels to perform optimized packet-level traffic analysis **without writing any code**.
+nPrintML bridges the gap between [nPrint](https://nprint.github.io/nprint), which generates standard fingerprints for packets, and AutoML, which allows for optimized model training and traffic analysis. nPrintML enables users with network traffic and labels to perform optimized packet-level traffic analysis **without writing any code**.
 
-For a high-level overview, installation instructions, and detailed usage information, please visit [the project's homepage](https://nprint.github.io/nprintml.html).
+For a high-level overview, installation instructions, and detailed usage information, please visit [the project's homepage](https://nprint.github.io/nprintml).
 
 For brief [installation](#set-up) and [usage](#usage) instructions, or for the [Docker container demo](#demo), see below.
 

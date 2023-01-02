@@ -12,8 +12,7 @@ import itertools
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-from autogluon.tabular import TabularPredictor
-from autogluon.core.features.feature_metadata import FeatureMetadata
+from autogluon.tabular import FeatureMetadata, TabularPredictor
 from autogluon.features.generators import AutoMLPipelineFeatureGenerator
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer

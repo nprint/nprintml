@@ -13,7 +13,7 @@ For brief [installation](#set-up) and [usage](#usage) instructions, or for the [
 
 ### Dependencies
 
-Python versions 3.6 through 3.8 are supported.
+Python versions 3.7 through 3.9 are supported.
 
 You might check what versions of Python are installed on your system, _e.g._:
 

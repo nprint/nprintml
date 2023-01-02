@@ -20,9 +20,9 @@ jobs:
           - macos-latest
 
         python-version:
+          - '3.9'
           - '3.8'
           - '3.7'
-          - '3.6'
 
     steps:
       - name: Checkout repository
@@ -63,7 +63,7 @@ jobs:
         run: brew install argp-standalone
 
       - name: Install tox
-        run: python -m pip install $(grep tox setup.py | tr -d "',")
+        run: python -m pip install -r requirement/test.txt
 
       - name: Test
         env:
@@ -99,7 +99,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Install tox
-        run: python -m pip install $(grep tox setup.py | tr -d "',")
+        run: python -m pip install -r requirement/test.txt
 
       - name: Lint
         run: tox -e lint

@@ -1,4 +1,4 @@
-FROM python:3.8.12-bullseye
+FROM python:3.9.15-bullseye
 
 ARG NML_VERSION
 
